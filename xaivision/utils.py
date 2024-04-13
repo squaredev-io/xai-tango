@@ -22,7 +22,7 @@ except (Exception, ):
 
 class MedPCacheDataset_normalised():
     """
-    Dataset interface of RAISE-LPBF-Laser benchmark cache single frame power 
+    Dataset interface of RAISE-LPBF-Laser benchmark cache single frame power
     prediction.
     """
 
