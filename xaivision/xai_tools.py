@@ -50,7 +50,7 @@ def vision_shap(data, batch_size, model_py, model_input):
         - batch_size (int): Batch size for DataLoader.
         - model_py: The PyTorch model.
         - sample_index (int): Index of the sample image for which SHAP values
-        are computed.
+                            are computed.
 
     Returns:
         list: A list of matplotlib figures containing SHAP value plots.
@@ -96,7 +96,7 @@ def shap_overview(data, batch_background, batch_test, model_py):
     Args:
         - data: The dataset to be used.
         - batch_background (int): Batch size for background data for SHAP
-        computation.
+                                    computation.
         - batch_test (int): Batch size for test data for SHAP computation.
         - model_py: The PyTorch model.
 

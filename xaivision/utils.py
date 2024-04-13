@@ -102,12 +102,11 @@ def check_onnx_torch_out(onnx_model_path, torch_model, model_input):
         - onnx_model_path (str): Path to the ONNX model file.
         - torch_model (torch.nn.Module): PyTorch model.
         - datapoint (tuple): A tuple containing input data and its
-        corresponding labels.
+                            corresponding labels.
 
     Returns:
         None
     """
-
     data_inp = np.expand_dims(model_input, axis=0)
 
     # for layers in dict(torch_model.named_modules()): print (layers)
@@ -154,14 +153,14 @@ def model_details(model, data_size):
     Parameters:
         - model (torch.nn.Module): The PyTorch model to inspect.
         - data_size (tuple): The size of the input data (e.g., (channels,
-        height, width)).
+                            height, width)).
 
     Returns:
         tuple: A tuple containing two elements:
             - dot (graphviz.Digraph): Graph visualization of the model
-            architecture.
+                                    architecture.
             - sum (str): Summary of the model including the number of
-            parameters and layers.
+                        parameters and layers.
     """
 
     # create some sample input data
@@ -202,8 +201,9 @@ def sample_details(model, datapoint):
         tuple: A tuple containing two elements:
             - input_data (numpy.ndarray): The input data after squeezing.
             - output_data (numpy.ndarray): The output data from the model
-            after squeezing, converting to numpy array,
-              and detaching from the computation graph.
+                                            after squeezing, converting to
+                                            numpy array, and detaching from
+                                            the computation graph.
     """
 
     data_inp = np.expand_dims(datapoint, axis=0)
@@ -222,15 +222,15 @@ def conv2d_feature_vis_no_extra_layers(model, datasample):
 
     Parameters:
         - model (torch.nn.Module): The PyTorch model from which to extract
-        feature maps.
+                                    feature maps.
         - datasample (tuple): A tuple containing input data and its
-        corresponding labels.
+                                    corresponding labels.
 
     Returns:
         tuple: A tuple containing two elements:
             - processed (list): A list of processed feature maps.
             - names (list): A list of names of the Conv2d layers whose feature
-            maps were extracted.
+                            maps were extracted.
     """
 
     model_weights = []
@@ -284,7 +284,7 @@ def find_convolutions(model):
 
     Args:
         - model (torch.nn.Module): The PyTorch model to search for
-        convolutional layers.
+                                    convolutional layers.
 
     Returns:
         tuple: A tuple containing two lists:
@@ -318,15 +318,15 @@ def conv2d_feature_vis_extra_layers(model, datasample):
 
     Parameters:
         - model (torch.nn.Module): The PyTorch model from which to extract
-        feature maps.
+                                    feature maps.
         - datasample (tuple): A tuple containing input data and its
-        corresponding labels.
+                                corresponding labels.
 
     Returns:
         tuple: A tuple containing two elements:
             - processed (list): A list of processed feature maps.
             - names (list): A list of names of the Conv2d layers whose feature
-            maps were extracted.
+                            maps were extracted.
     """
 
     spot_convs, layers = find_convolutions(model)
@@ -360,7 +360,8 @@ def find_components(model, datasample, components):
     Args:
         - model (torch.nn.Module): The neural network model.
         - datasample (tuple): A tuple containing input data and its
-        corresponding label, Expected format: (input_data, label).
+                                corresponding label, Expected format:
+                                (input_data, label).
         - components (int): The number of components to extract.
 
     Returns:
