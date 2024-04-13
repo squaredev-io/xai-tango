@@ -5,7 +5,10 @@ import pytest
 import torch
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from xaivision.utils import load_models
+try:
+    from xaivision.utils import load_models
+except (Exception, ):
+    raise
 
 
 @pytest.fixture

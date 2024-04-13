@@ -7,8 +7,10 @@ import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-
-from xaivision.utils import MedPCacheDataset_normalised, load_sample
+try:
+    from xaivision.utils import MedPCacheDataset_normalised, load_sample
+except (Exception, ):
+    raise
 
 
 # Define test cases for MedPCacheDataset_normalised

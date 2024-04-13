@@ -15,15 +15,10 @@ from xaivision.utils import (
     conv2d_feature_vis_no_extra_layers,
     find_components,
 )
-from xaivision.xai_tools import (
-    vision_shap,
-    integrated_grad,
-    deeplift,
-    shap_overview
-)
+from xaivision.xai_tools import (vision_shap, integrated_grad, deeplift,
+                                 shap_overview)
 
 from xaivision.utils import load_models
-
 
 if __name__ == "__main__":
 
@@ -38,9 +33,10 @@ if __name__ == "__main__":
         default=4,
         help="Select the sample you want to examine",
     )
-    optional.add_argument(
-        "-h", "--help", action="help", help="show this help message and exit"
-    )
+    optional.add_argument("-h",
+                          "--help",
+                          action="help",
+                          help="show this help message and exit")
 
     args = parser.parse_args()
 
@@ -73,9 +69,8 @@ if __name__ == "__main__":
 
     model_input, ground_truth = load_sample(data_path, args.sample)
 
-    if not check_model_data_compatibility(
-        torch_model, model_input.shape, ground_truth.shape
-    ):
+    if not check_model_data_compatibility(torch_model, model_input.shape,
+                                          ground_truth.shape):
         raise ValueError("Data dont corespond to model's architecture")
 
     dot, sum = model_details(torch_model, model_input.shape)
@@ -136,7 +131,8 @@ if __name__ == "__main__":
     plt.close()
 
     folder_path_components = os.path.join(folder_path_sample, "components")
-    if os.path.exists(folder_path_components) and os.path.isdir(folder_path_components):
+    if os.path.exists(folder_path_components) and os.path.isdir(
+            folder_path_components):
         shutil.rmtree(folder_path_components)
 
     path = Path(folder_path_components)
@@ -170,9 +166,8 @@ if __name__ == "__main__":
 
     for i, array in enumerate(grads):
         plt.imshow(array)
-        plt.savefig(
-            folder_path_sample + "/integrated_grad_value_" + str(i + 1) +
-            ".png")
+        plt.savefig(folder_path_sample + "/integrated_grad_value_" +
+                    str(i + 1) + ".png")
         plt.close()
 
     dl_plots = deeplift(torch_model, model_input)

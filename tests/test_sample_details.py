@@ -6,7 +6,10 @@ import numpy as np
 import torch
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from xaivision.utils import sample_details
+try:
+    from xaivision.utils import sample_details
+except (Exception, ):
+    raise
 
 
 @pytest.fixture
