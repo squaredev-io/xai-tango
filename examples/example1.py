@@ -5,20 +5,26 @@ import matplotlib.pyplot as plt
 import torch
 import numpy as np
 from pathlib import Path
-from xaivision.utils import (
-    load_sample,
-    check_model_data_compatibility,
-    model_details,
-    sample_details,
-    check_onnx_torch_out,
-    conv2d_feature_vis_extra_layers,
-    conv2d_feature_vis_no_extra_layers,
-    find_components,
-)
-from xaivision.xai_tools import (vision_shap, integrated_grad, deeplift,
-                                 shap_overview)
+import sys
 
-from xaivision.utils import load_models
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+try:
+    from xaivision.utils import (
+        load_sample,
+        check_model_data_compatibility,
+        model_details,
+        sample_details,
+        check_onnx_torch_out,
+        conv2d_feature_vis_extra_layers,
+        conv2d_feature_vis_no_extra_layers,
+        find_components,
+    )
+    from xaivision.xai_tools import (vision_shap, integrated_grad, deeplift,
+                                     shap_overview)
+
+    from xaivision.utils import load_models
+except (Exception, ):
+    raise
 
 if __name__ == "__main__":
 
