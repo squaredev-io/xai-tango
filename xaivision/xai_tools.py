@@ -25,8 +25,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 try:
-    from xai_vision.xaivision.utils import (
-        full_squeeze)
+    from utils import full_squeeze
 except (Exception, ):
     raise
 

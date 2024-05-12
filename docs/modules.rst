@@ -2,6 +2,6 @@ xaivision
 =========
 
 .. toctree::
-   :maxdepth: 7
+   :maxdepth: 4
 
    xaivision
