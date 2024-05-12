@@ -108,13 +108,13 @@ def connected_components(image):
     Finds the largest connected component in a binary image.
 
     Args:
-    - image (list): A binary image represented as a list of lists,
-      where each inner list represents a row of pixels and each pixel
-      has a value of either 0 or 1.
+        - image (list): A binary image represented as a list of lists, where
+                        each inner list represents a row of pixels and each
+                        pixel has avalue of either 0 or 1
 
     Returns:
-    - set: A set of pixel coordinates belonging to the largest connected
-        component.
+        - set: A set of pixel coordinates belonging to the largest connected
+            component.
     """
 
     height = len(image)
@@ -126,11 +126,11 @@ def connected_components(image):
         Gets the neighboring pixel coordinates of a given pixel.
 
         Args:
-        - x (int): X-coordinate of the pixel.
-        - y (int): Y-coordinate of the pixel.
+            - x (int): X-coordinate of the pixel.
+            - y (int): Y-coordinate of the pixel.
 
         Returns:
-        - list: List of neighboring pixel coordinates.
+            - list: List of neighboring pixel coordinates.
         """
         neighbors = []
         for dx in [-1, 0, 1]:
@@ -149,12 +149,12 @@ def connected_components(image):
         Performs depth-first search traversal to find connected components.
 
         Args:
-        - x (int): X-coordinate of the starting pixel.
-        - y (int): Y-coordinate of the starting pixel.
-        - label (int): Label of the connected component.
+            - x (int): X-coordinate of the starting pixel.
+            - y (int): Y-coordinate of the starting pixel.
+            - label (int): Label of the connected component.
 
         Returns:
-        - int: Size of the connected component.
+            - int: Size of the connected component.
         """
         stack = [(x, y)]
         size = 0
@@ -203,15 +203,15 @@ def zero_non_largest_components(image, largest_component_pixels):
     component.
 
     Args:
-    - image (list): A binary image represented as a list of lists,
-      where each inner list represents a row of pixels and each pixel
-      has a value of either 0 or 1.
-    - largest_component_pixels (set): A set of pixel coordinates belonging
-      to the largest connected component.
+        - image (list): A binary image represented as a list of lists,
+                        where each inner list represents a row of pixels and
+                        each pixel has a value of either 0 or 1.
+        - largest_component_pixels (set): A set of pixel coordinates belonging
+                                            to the largest connected component.
 
     Returns:
-    - list: The modified binary image with non-largest component pixels zeroed
-            out.
+        - list: The modified binary image with non-largest component pixels
+                 zeroed out.
     """
 
     height = len(image)
@@ -229,17 +229,17 @@ def overall_score(data, background_size, model_py, check_samples=-1):
     techniques.
 
     Args:
-    - data (list): A list of input data.
-    - background_size (int): The size of the background dataset used for SHAP
-                        computation.
-    - model_py: The model to explain.
-    - check_samples (int, optional): The number of samples to check. Defaults
-                                    to -1.
+        - data (list): A list of input data.
+        - background_size (int): The size of the background dataset used for
+                                SHAP computation.
+        - model_py: The model to explain.
+        - check_samples (int, optional): The number of samples to check.
+                                        Defaults to -1.
 
     Returns:
-    - tuple: A tuple containing two arrays:
-        - The mean number of pixels turned off across all samples.
-        - The mean effect of pixel modifications across all samples.
+        tuple: A tuple containing two arrays:
+            - The mean number of pixels turned off across all samples.
+            - The mean effect of pixel modifications across all samples.
     """
     ds = ImageDataset_normalised(data)
     device = torch.device('cpu')

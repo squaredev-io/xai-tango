@@ -9,7 +9,7 @@ import sys
 
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 try:
-    from xaivision.utils import (
+    from xai_vision.xaivision.utils import (
         load_sample,
         check_model_data_compatibility,
         model_details,
@@ -19,13 +19,13 @@ try:
         conv2d_feature_vis_no_extra_layers,
         find_components,
     )
-    from xaivision.xai_tools import (vision_shap,
-                                     integrated_grad,
-                                     deeplift,
-                                     shap_overview,
-                                     overall_score)
+    from xai_vision.xaivision.xai_tools import (vision_shap,
+                                                integrated_grad,
+                                                deeplift,
+                                                shap_overview,
+                                                overall_score)
 
-    from xaivision.utils import load_models
+    from xai_vision.xaivision.utils import load_models
 except (Exception, ):
     raise
 
