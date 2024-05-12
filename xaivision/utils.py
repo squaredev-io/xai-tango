@@ -60,6 +60,14 @@ class YourModelWithoutLastLayers(nn.Module):
         return x
 
 
+def full_squeeze(array):
+
+    while 1 in array.shape:
+        array = np.squeeze(array)
+
+    return array
+
+
 def load_models(model):
     """
     Load model and convert it to Python format.

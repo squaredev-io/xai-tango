@@ -7,9 +7,9 @@ import numpy as np
 from pathlib import Path
 import sys
 
-sys.path.append(str(Path(__file__).resolve().parent.parent))
+sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 try:
-    from xaivision.utils import (
+    from xai_vision.xaivision.utils import (
         load_sample,
         check_model_data_compatibility,
         model_details,
@@ -19,8 +19,9 @@ try:
         conv2d_feature_vis_no_extra_layers,
         find_components,
     )
-    from xaivision.xai_tools import (vision_shap, integrated_grad, deeplift,
-                                     shap_overview)
+    from xai_vision.xaivision.xai_tools import (vision_shap, integrated_grad,
+                                                deeplift, shap_overview,
+                                                overall_score)
 
     from xaivision.utils import load_models
 except (Exception, ):
@@ -36,7 +37,7 @@ if __name__ == "__main__":
         "-s",
         "--sample",
         type=int,
-        default=4,
+        default=8,
         help="Select the sample you want to examine",
     )
     optional.add_argument("-h",
@@ -154,7 +155,7 @@ if __name__ == "__main__":
                     ".png")
     plt.close()
 
-    background = 40
+    background = 100
     samples = 10
 
     overview_plt = shap_overview(data_path, background, samples, torch_model)
@@ -163,11 +164,26 @@ if __name__ == "__main__":
         plot.savefig(folder_path + "/shap_overview_value_" + str(i) + ".png")
         plt.close()
 
-    shap_plots = vision_shap(data_path, background, torch_model, model_input)
+    shap_plots, shap_table = vision_shap(data_path, background, torch_model,
+                                         model_input)
+
     for i, plot in enumerate(shap_plots):
         plot.savefig(folder_path_sample + "/shap_value_" + str(i) + ".png")
         plt.close()
 
+    arr = shap_table[0].copy()
+    while 1 in arr.shape:
+        arr = np.squeeze(arr)
+
+    check_samples = 2
+    pixels, effect = overall_score(data_path, background, torch_model,
+                                   check_samples)
+    print("===============================================\
+          ===========================================")
+    print("Overall Score")
+    print("Pixels that dont belong to the original image and have an effect\
+          for each target: ", pixels)
+    print("Mean Effect of this pixels(lower == better): ", effect)
     grads = integrated_grad(torch_model, model_input)
 
     for i, array in enumerate(grads):
