@@ -13,7 +13,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 project = 'xaivision'
 copyright = '2024, Philippos Orfanoudakis'
 author = 'Philippos Orfanoudakis'
-release = '0.5.0'
+release = '0.5.4'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
