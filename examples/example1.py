@@ -147,7 +147,7 @@ if __name__ == "__main__":
     print("----FUNCTIONALITY 5----")
 
     # Functionality N5
-    # Save features from conv2d layers extracted from the model 
+    # Save features from conv2d layers extracted from the model
     # with only conv2d layers
     arrays, names = conv2d_feature_vis_no_extra_layers(torch_model,
                                                        model_input)
@@ -238,7 +238,7 @@ if __name__ == "__main__":
     arr = shap_table[0].copy()
     while 1 in arr.shape:
         arr = np.squeeze(arr)
-    
+
     print("----FUNCTIONALITY 10----")
 
     # Functionality N10
