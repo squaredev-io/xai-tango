@@ -112,6 +112,6 @@ tzdata==2024.1
 urllib3==2.2.1
 virtualenv==20.25.1
 wheel==0.41.2
-xaivision==0.2.0
+xaivision==0.5.4
 xattr==1.1.0
 zipp==3.18.1
