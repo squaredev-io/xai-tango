@@ -12,6 +12,7 @@ import onnx
 
 import sys
 from pathlib import Path
+# from memory_profiler import profile
 
 sys.path.append(str(Path(__file__).resolve().parent))
 try:
@@ -60,6 +61,7 @@ class YourModelWithoutLastLayers(nn.Module):
         return x
 
 
+# @profile
 def full_squeeze(array):
 
     while 1 in array.shape:
@@ -68,6 +70,7 @@ def full_squeeze(array):
     return array
 
 
+# @profile
 def load_models(model):
     """
     Load model and convert it to Python format.
@@ -85,6 +88,7 @@ def load_models(model):
     return model_py
 
 
+# @profile
 def load_sample(data, sample):
     """
     Load a sample from the dataset.
@@ -102,6 +106,7 @@ def load_sample(data, sample):
     return datapoint
 
 
+# @profile
 def check_onnx_torch_out(onnx_model_path, torch_model, model_input):
     """
     Compare outputs of an ONNX model and a PyTorch model given a data point.
@@ -144,6 +149,7 @@ def check_onnx_torch_out(onnx_model_path, torch_model, model_input):
     return diagnosis
 
 
+# @profile
 def check_model_data_compatibility(model, data_size, output_size):
     # create some sample input data
     x = np.expand_dims(torch.randn(data_size), axis=0)
@@ -153,6 +159,7 @@ def check_model_data_compatibility(model, data_size, output_size):
     return y.shape == output_size
 
 
+# @profile
 def model_details(model, data_size):
     """
     Retrieve details about the model including architecture visualization and
@@ -197,6 +204,7 @@ def model_details(model, data_size):
     return dot, summary_with_text
 
 
+# @profile
 def sample_details(model, datapoint):
     """
     Get details about a sample by passing it through the model.
@@ -223,6 +231,7 @@ def sample_details(model, datapoint):
     return out_torch
 
 
+# @profile
 def conv2d_feature_vis_no_extra_layers(model, datasample):
     """
     Extracts and visualizes feature maps from Conv2d layers in a given model
@@ -286,6 +295,7 @@ def conv2d_feature_vis_no_extra_layers(model, datasample):
     return processed, names
 
 
+# @profile
 def find_convolutions(model):
     """
     Finds convolutional layers within a PyTorch model.
@@ -319,6 +329,7 @@ def find_convolutions(model):
     return spot_convs, layers
 
 
+# @profile
 def conv2d_feature_vis_extra_layers(model, datasample):
     """
     Extracts and visualizes feature maps from Conv2d layers in a given model
@@ -360,6 +371,7 @@ def conv2d_feature_vis_extra_layers(model, datasample):
     return processed, conv_names
 
 
+# @profile
 def find_components(model, datasample, components):
     """
     Find components using Non-Negative Matrix Factorization (NMF) based on

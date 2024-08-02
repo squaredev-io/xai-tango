@@ -23,6 +23,8 @@ import sys
 
 from pathlib import Path
 
+# from memory_profiler import profile
+
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 try:
     from utils import full_squeeze
@@ -56,6 +58,7 @@ class ImageDataset_normalised(torch.utils.data.Dataset):
             return len(h5f['x'])
 
 
+# @profile
 def vision_shap(data, batch_size, model_py, model_input):
     """Compute SHAP (SHapley Additive exPlanations) values for a given image.
 
@@ -103,6 +106,7 @@ def vision_shap(data, batch_size, model_py, model_input):
     return plots, shap_numpy
 
 
+# @profile
 def connected_components(image):
     """
     Finds the largest connected component in a binary image.
@@ -197,6 +201,7 @@ def connected_components(image):
     return largest_component_pixels
 
 
+# @profile
 def zero_non_largest_components(image, largest_component_pixels):
     """
     Zeros out pixels in the image that do not belong to the largest connected
@@ -223,6 +228,7 @@ def zero_non_largest_components(image, largest_component_pixels):
     return image
 
 
+# @profile
 def overall_score(data, background_size, model_py, check_samples=-1):
     """
     Computes the overall score based on SHAP values and image processing
@@ -254,8 +260,8 @@ def overall_score(data, background_size, model_py, check_samples=-1):
         samples_list = range(ds.__len__())
         len_samples = ds.__len__()
     else:
-        samples_list = list(random.sample(range(0, ds.__len__()),
-                                          check_samples))
+        samples_list = list(
+            random.sample(range(0, ds.__len__()), check_samples))
         len_samples = check_samples
 
     pixels_off = []
@@ -275,6 +281,8 @@ def overall_score(data, background_size, model_py, check_samples=-1):
             shap_numpy = np.expand_dims(shap_numpy, axis=0)
 
         image_filtered = full_squeeze(image_input)
+        # plt.imshow(image_filtered)
+        # plt.show()
         _, upper = np.percentile(image_filtered, [2.5, 99.9])
         image_filtered[image_filtered < upper] = 0
         image_filtered[image_filtered != 0] = 1
@@ -282,13 +290,16 @@ def overall_score(data, background_size, model_py, check_samples=-1):
         largest_component = connected_components(image_filtered)
         image_filtered = zero_non_largest_components(image_filtered,
                                                      largest_component)
-
         pixels_sample = []
         effect_sample = []
+
+        # plt.imshow(image_filtered)
+        # plt.show()
         for shap_values in shap_numpy:
             original = shap_values.copy()
             shap_filtered = full_squeeze(shap_values).copy()
-
+            # plt.imshow(shap_filtered)
+            # plt.show()
             lower, upper = np.percentile(shap_filtered, [0.1, 99.9])
 
             shap_filtered[shap_filtered >= upper] = 1
@@ -296,9 +307,10 @@ def overall_score(data, background_size, model_py, check_samples=-1):
             shap_filtered[shap_filtered != 1] = 0
 
             mask = np.abs(shap_filtered - image_filtered)
-
             final_values = full_squeeze(original)
             final_values[mask == 0] = 0
+            # plt.imshow(final_values)
+            # plt.show()
             non_zero_pixels_effect = np.count_nonzero(final_values)
             sum_values = np.sum(np.abs(final_values))
             mean_effect = sum_values / non_zero_pixels_effect
@@ -312,6 +324,7 @@ def overall_score(data, background_size, model_py, check_samples=-1):
     return np.mean(pixels_off, axis=0), np.mean(effect, axis=0)
 
 
+# @profile
 def shap_overview(data, batch_background, batch_test, model_py):
     """Compute SHAP (SHapley Additive exPlanations) overview for a given
     dataset.
@@ -395,6 +408,7 @@ def shap_overview(data, batch_background, batch_test, model_py):
     return plots
 
 
+# @profile
 def integrated_grad(model, datasample):
     """Compute Integrated Gradients for a given data sample and model.
 
@@ -416,6 +430,7 @@ def integrated_grad(model, datasample):
     return grads
 
 
+# git @profile
 def deeplift(model, datasample):
     """Compute DeepLift attributions for a given data sample and model.
 

@@ -5,29 +5,24 @@ import matplotlib.pyplot as plt
 import torch
 import numpy as np
 from pathlib import Path
-import sys
 
-sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
-try:
-    from xai_vision.xaivision.utils import (
-        load_sample,
-        check_model_data_compatibility,
-        model_details,
-        sample_details,
-        check_onnx_torch_out,
-        conv2d_feature_vis_extra_layers,
-        conv2d_feature_vis_no_extra_layers,
-        find_components,
-    )
-    from xai_vision.xaivision.xai_tools import (vision_shap,
-                                                integrated_grad,
-                                                deeplift,
-                                                shap_overview,
-                                                overall_score)
+from xaivision.utils import (
+    load_sample,
+    load_models,
+    check_model_data_compatibility,
+    model_details,
+    sample_details,
+    check_onnx_torch_out,
+    conv2d_feature_vis_extra_layers,
+    conv2d_feature_vis_no_extra_layers,
+    find_components,
+)
 
-    from xai_vision.xaivision.utils import load_models
-except (Exception, ):
-    raise
+from xaivision.xai_tools import (vision_shap,
+                                 integrated_grad,
+                                 deeplift,
+                                 shap_overview,
+                                 overall_score)
 
 if __name__ == "__main__":
 
@@ -74,7 +69,7 @@ if __name__ == "__main__":
     model_path = os.path.join(model_dir, "model.onnx")
     torch_model = load_models(model_path)
 
-    data_path = os.path.join(data_dir, "cache.h5")
+    data_path = os.path.join(data_dir, "data1.h5")
 
     model_input, ground_truth = load_sample(data_path, args.sample)
 
@@ -177,14 +172,14 @@ if __name__ == "__main__":
     while 1 in arr.shape:
         arr = np.squeeze(arr)
 
-    check_samples = 2
+    check_samples = -1
     pixels, effect = overall_score(data_path, background, torch_model,
                                    check_samples)
     print("===============================================\
-          ===========================================")
+===========================================")
     print("Overall Score")
     print("Pixels that dont belong to the original image and have an effect\
-          for each target: ", pixels)
+ for each target: ", pixels)
     print("Mean Effect of this pixels(lower == better): ", effect)
     grads = integrated_grad(torch_model, model_input)
 
