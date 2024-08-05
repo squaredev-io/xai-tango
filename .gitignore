@@ -6,6 +6,8 @@ debug/
 .pytest_cache/
 .DS_Store
 docs/*
+!docs/_build
+docs/_build/*
 !docs/_build/html/
 **/__pycache__
 **/.venv
