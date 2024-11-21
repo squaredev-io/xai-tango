@@ -1,0 +1,37 @@
+{
+    "summary_plot": {
+        "title": "What is the SHAP Summary Plot?",
+        "description": "**Description**: The SHAP Summary Plot provides an overview of how each feature impacts the model's predictions. Each dot represents a data point, with the color indicating the feature value (e.g., blue for low values, red for high values).",
+        "where_it_helps": "**Where It Helps**: Identifies the most important features globally. Shows the range and direction of SHAP values for each feature.",
+        "how_to_use": "**How It Can Be Used**: Helps prioritize which features to focus on for further analysis. Provides insights into how features influence predictions.",
+        "requirements": "**What We Need**: A trained machine learning model and the input dataset used for predictions."
+    },
+    "bar_plot": {
+        "title": "What is the SHAP Bar Plot?",
+        "description": "**Description**: The SHAP Bar Plot shows the average importance of each feature across the dataset. Features are sorted by their mean SHAP value, highlighting which features have the most overall impact.",
+        "where_it_helps": "**Where It Helps**: Provides a ranking of feature importance. Useful for non-technical stakeholders.",
+        "how_to_use": "**How It Can Be Used**: Helps decide which features to focus on for optimization. Serves as a quick summary for presentations.",
+        "requirements": "**What We Need**: SHAP values calculated for the dataset."
+    },
+    "waterfall_plot": {
+        "title": "What is the SHAP Waterfall Plot?",
+        "description": "**Description**: The SHAP Waterfall Plot explains the contribution of each feature to the prediction of a single data point. It shows how the model arrives at its prediction by breaking down individual feature contributions.",
+        "where_it_helps": "**Where It Helps**: Understands why the model made a specific prediction for a data point. Explains the prediction in terms of feature contributions.",
+        "how_to_use": "**How It Can Be Used**: Debug individual predictions. Communicate specific predictions to stakeholders.",
+        "requirements": "**What We Need**: SHAP values for the specific data point."
+    },
+    "heatmap_plot": {
+        "title": "What is the SHAP Heatmap Plot?",
+        "description": "**Description**: The SHAP Heatmap displays the interaction of SHAP values across multiple data points and features. Each cell shows the SHAP value of a feature for a specific data point.",
+        "where_it_helps": "**Where It Helps**: Detects patterns or clusters in feature importance. Analyzes how feature impacts vary across data points.",
+        "how_to_use": "**How It Can Be Used**: Identifies groups of data points influenced similarly. Investigates consistent behavior in the model.",
+        "requirements": "**What We Need**: SHAP values for a subset or the full dataset."
+    },
+    "beeswarm_plot": {
+        "title": "What is the SHAP Beeswarm Plot?",
+        "description": "**Description**: The SHAP Beeswarm Plot combines the insights of the Summary Plot and the Heatmap. It shows how feature values (color-coded) impact predictions across all data points, focusing on the distribution of SHAP values for each feature.",
+        "where_it_helps": "**Where It Helps**: Understands the range and distribution of feature impacts. Highlights how different feature values influence predictions.",
+        "how_to_use": "**How It Can Be Used**: Explains the variability of feature impacts. Identifies outliers or unusual behavior.",
+        "requirements": "**What We Need**: SHAP values for the dataset."
+    }
+}
