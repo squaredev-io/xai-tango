@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_extraction.text import TfidfVectorizer
+import streamlit as st
 
 def preprocess_data(data):
     """
@@ -87,3 +88,8 @@ def preprocess_data(data):
     data, dropped_columns = ensure_numeric(data)
     
     return data
+
+
+@st.cache_data
+def cached_preprocess_data(data):
+    return preprocess_data(data)

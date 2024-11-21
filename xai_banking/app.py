@@ -1,7 +1,7 @@
 import streamlit as st
 import pickle
 import pandas as pd
-from utils.data_processing import preprocess_data
+from utils.data_processing import cached_preprocess_data
 from utils.explainers import lime_explainer, shap_explainer
 import matplotlib.pyplot as plt
 import shap
@@ -63,20 +63,25 @@ if st.sidebar.button("Use Default Data"):
 
 # Data Preprocessing and Splitting
 if st.session_state["model"] and st.session_state["data"] is not None:
-    st.session_state["processed_data"] = preprocess_data(st.session_state["data"])
-    st.write("Preprocessed Dataset:")
-    st.dataframe(st.session_state["processed_data"].head())
+    # Ensure processed_data is created if not already done
+    if st.session_state["processed_data"] is None:
+        st.session_state["processed_data"] = cached_preprocess_data(st.session_state["data"])
 
-    # Splitting data into training and testing sets
-    X = st.session_state["processed_data"].drop(columns=["label_fraud_post"])
-    y = st.session_state["processed_data"]["label_fraud_post"]
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
-    st.session_state["X_train"] = X_train
-    st.session_state["X_test"] = X_test
-    st.session_state["y_train"] = y_train
-    st.session_state["y_test"] = y_test
+    # Display processed data safely
+    if st.session_state["processed_data"] is not None:
+        st.write("Preprocessed Dataset:")
+        st.dataframe(st.session_state["processed_data"].head())
+
+        # Splitting data into training and testing sets
+        X = st.session_state["processed_data"].drop(columns=["label_fraud_post"])
+        y = st.session_state["processed_data"]["label_fraud_post"]
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42, stratify=y
+        )
+        st.session_state["X_train"] = X_train
+        st.session_state["X_test"] = X_test
+        st.session_state["y_train"] = y_train
+        st.session_state["y_test"] = y_test
 
 # Explainability Method Selection
 method = st.selectbox("Choose Explainability Method", ["Lime", "Shap"])
