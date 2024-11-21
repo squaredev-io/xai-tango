@@ -86,9 +86,9 @@ if st.session_state["model"] and st.session_state["data"] is not None:
 # Explainability Method Selection
 method = st.selectbox("Choose Explainability Method", ["Lime", "Shap"])
 
-# Row Selection for Lime
+# Row Selection for Lime (Only Display When "Lime" is Selected)
 selected_row_index = None
-if st.session_state["X_test"] is not None:
+if method == "Lime" and st.session_state["X_test"] is not None:
     st.sidebar.header("Select Row for Explanation")
     selected_row_index = st.sidebar.number_input(
         "Select Row Index",

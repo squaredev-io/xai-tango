@@ -28,7 +28,6 @@ def lime_explainer(model, X_train, X_test, selected_row_index, class_names=None)
 
     # Select an instance to explain
     instance = X_test_aligned.iloc[selected_row_index]
-    print((X_test_aligned), "ddd")
     # Generate explanation for the selected instance
     explanation = explainer.explain_instance(
         data_row=instance.values,             # The instance to explain
