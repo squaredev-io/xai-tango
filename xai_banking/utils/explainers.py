@@ -1,5 +1,7 @@
 from lime.lime_tabular import LimeTabularExplainer
 import shap
+import matplotlib.pyplot as plt
+
 
 def lime_explainer(model, X_train, X_test, selected_row_index, class_names=None):
     """
@@ -46,6 +48,19 @@ def shap_explainer(model, data):
     Returns: 
         Shap explanation object.
     """
+    # Generate SHAP values
     explainer = shap.Explainer(model)
     shap_values = explainer(data)
+    
+    # Clear previous plots to avoid double plots
+    plt.clf()
+    
+    # Customize the summary plot
+    plt.figure(figsize=(12, 8))  # Adjust figure size
+    shap.summary_plot(shap_values, data, show=False)
+    plt.xticks(fontsize=10)  # Adjust font size
+    plt.yticks(fontsize=10)
+    plt.tight_layout()  # Fix layout to avoid overlapping
+    plt.show()  # Ensure only the current plot is shown
+    
     return shap_values
