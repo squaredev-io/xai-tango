@@ -18,14 +18,28 @@ from xaivision.xai_tools import *
 
 # Agg backend for non-GUI rendering
 matplotlib.use("Agg")  
-app = FastAPI()
+app = FastAPI(
+    title="XAI API",
+    description="An API for generating explanations and insights using XAI tools for Banking and Vision models in Tango Project.",
+    version="1.0.0",
+    contact={
+        "name": "Squaredev team",
+        "url": "https://squaredev.io/",
+        "email": "hello@squaredev.io",
+    },
+)
 
+app.description += (
+    "\n\n### Notes:\n"
+    "- **Use `/lime` and `/shap` for Banking XAI tasks.**\n"
+    "- **Use Vision endpoints like `/model-details` for Vision tasks.**\n"
+    "- **Refer to each endpoint's documentation for usage examples.**"
+)
 # Preloaded banking_model and dataset paths
 BANKING_MODEL_PATH = "xai_banking/utils/random_forest_model.pkl"
 BANKING_DATA_PATH = "xai_banking/utils/synthetic_dataset.csv"
-
-MODEL_PATH = "xaivision/model.onnx"
-DATA_PATH = "xaivision/data1.h5"
+VISION_MODEL_PATH = "xaivision/model.onnx"
+VISION_DATA_PATH = "xaivision/data1.h5"
 
 
 # Load banking_model and dataset at startup
@@ -42,14 +56,14 @@ def load_resources():
     if not os.path.exists(BANKING_MODEL_PATH) or not os.path.exists(BANKING_DATA_PATH):
         raise RuntimeError("Banking Model or dataset not found.")
 
-    if not os.path.exists(MODEL_PATH) or not os.path.exists(DATA_PATH):
+    if not os.path.exists(VISION_MODEL_PATH) or not os.path.exists(VISION_DATA_PATH):
         raise RuntimeError("Vision Model or dataset not found.")
 
     with open(BANKING_MODEL_PATH, "rb") as f:
         banking_model = pickle.load(f)
 
-    model = load_models(MODEL_PATH)
-    dataset = preprocess_dataset(DATA_PATH)
+    model = load_models(VISION_MODEL_PATH)
+    dataset = preprocess_dataset(VISION_DATA_PATH)
 
     raw_data = pd.read_csv(BANKING_DATA_PATH)
     processed_data = preprocess_data(raw_data)
@@ -88,15 +102,26 @@ class ShapRequest(BaseModel):
 
 @app.get("/")
 def root():
-    return {"message": "Welcome to the XAI API. Use /lime or /shap endpoints for explanations."}
+    """
+    Welcome endpoint to confirm the API is running.
+    """
+    return {
+        "message": "Welcome to the XAI API! Use /docs for interactive documentation.",
+        "routes": ["/lime", "/shap", "/model-details", "/sample-details"],
+    }
 
 
 @app.post("/lime/", tags=["Banking"], response_model=LimeResponse)
 def lime_explanation(request: LimeRequest):
     """
     Generate LIME explanation for a specific row in the test dataset.
+
+    Args:
+        request (LimeRequest): Contains the row index to explain.
+
+    Returns:
+        LimeResponse: Base64 encoded plot URL for the LIME explanation.
     """
-    # Generate LIME explanation
     explanation = lime_explainer(
         model=banking_model,
         X_train=X_train,
@@ -122,9 +147,20 @@ def lime_explanation(request: LimeRequest):
 def shap_explanation(request: ShapRequest):
     """
     Generate SHAP explanation for the test dataset.
-    Supported plot types: 'summary', 'bar', 'waterfall', 'heatmap', 'beeswarm'.
+
+    Supported Plot Types:
+    - 'summary': Summary plot of SHAP values.
+    - 'bar': Bar plot of feature importance.
+    - 'waterfall': Waterfall plot for a single data point.
+    - 'heatmap': Heatmap visualization of SHAP values.
+    - 'beeswarm': Beeswarm plot for feature importance.
+
+    Args:
+        request (ShapRequest): Contains plot type and optional data point index.
+
+    Returns:
+        ShapResponse: Base64 encoded plot URL and additional metadata.
     """
-    # Generate SHAP values
     shap_values = shap_explainer(banking_model, X_test)
 
     # Save plots based on the requested type
@@ -162,14 +198,13 @@ def shap_explanation(request: ShapRequest):
     )
 
 
-# @app.get("/", tags=["Vision"])
-# def root():
-#     return {"message": "Welcome to the Vision XAI API. Use specific endpoints for visual explanations."}
-
 @app.get("/model-details/", tags=["Vision"], response_model=ModelDetailsResponse)
 def get_model_details():
     """
     Retrieve model architecture and details.
+
+    Returns:
+        ModelDetailsResponse: Includes a summary and architecture diagram (Base64).
     """
     if model is None:
         raise HTTPException(status_code=500, detail="Model not loaded.")
@@ -489,7 +524,7 @@ def get_shap_single_sample(request: ShapSingleSampleRequest):
             raise ValueError(f"Unexpected sample_input shape: {sample_input.shape}")
 
         # Call SHAP function and capture both return values
-        plots, shap_numpy = vision_shap(DATA_PATH, 10, model, sample_input)
+        plots, shap_numpy = vision_shap(VISION_DATA_PATH, 10, model, sample_input)
 
         # Convert plots to images
         images = []
@@ -520,7 +555,7 @@ def get_shap_overview():
     """
     Generate SHAP overview visualizations.
     """
-    plots = shap_overview(DATA_PATH, 40, 10, model)
+    plots = shap_overview(VISION_DATA_PATH, 40, 10, model)
     images = []
     for plot in plots:
         buf = BytesIO()

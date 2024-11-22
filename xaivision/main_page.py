@@ -4,11 +4,11 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
-from xaivision.utils import (load_models, model_details, sample_details,
+from utils import (load_models, model_details, sample_details,
                              conv2d_feature_vis_extra_layers,
                              conv2d_feature_vis_no_extra_layers,
                              find_components, MedPCacheDataset_normalised)
-from xaivision.xai_tools import (vision_shap, integrated_grad, deeplift,
+from xai_tools import (vision_shap, integrated_grad, deeplift,
                                  shap_overview)
 
 
