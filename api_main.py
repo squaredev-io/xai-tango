@@ -58,7 +58,7 @@ def load_resources():
     y = processed_data["label_fraud_post"]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
-
+ 
 class LimeRequest(BaseModel):
     row_index: int = Field(..., description="Row index of the data point to explain")
 
@@ -86,19 +86,19 @@ class ShapRequest(BaseModel):
         return values
 
 
-@app.get("/", tags=["Banking"])
+@app.get("/")
 def root():
     return {"message": "Welcome to the XAI API. Use /lime or /shap endpoints for explanations."}
 
 
-@app.post("/lime/", tags=["Banking"])
+@app.post("/lime/", tags=["Banking"], response_model=LimeResponse)
 def lime_explanation(request: LimeRequest):
     """
     Generate LIME explanation for a specific row in the test dataset.
     """
     # Generate LIME explanation
     explanation = lime_explainer(
-        banking_model=banking_model,
+        model=banking_model,
         X_train=X_train,
         X_test=X_test,
         selected_row_index=request.row_index,
@@ -114,10 +114,11 @@ def lime_explanation(request: LimeRequest):
 
     # Encode image in base64
     image_base64 = base64.b64encode(buf.read()).decode("utf-8")
-    return {"plot_base64": image_base64}
+    return LimeResponse(plot_url=image_base64)
 
 
-@app.post("/shap/", tags=["Banking"])
+
+@app.post("/shap/", tags=["Banking"], response_model=ShapResponse)
 def shap_explanation(request: ShapRequest):
     """
     Generate SHAP explanation for the test dataset.
@@ -151,11 +152,19 @@ def shap_explanation(request: ShapRequest):
 
     # Encode image in base64
     image_base64 = base64.b64encode(buf.read()).decode("utf-8")
-    return {"plot_base64": image_base64}
+    return ShapResponse(
+        plot_url=image_base64,
+        title="SHAP Explanation",
+        description="This plot shows the SHAP explanation for the model's prediction.",
+        where_it_helps="Helps in understanding feature importance.",
+        how_to_use="Use this plot to see how each feature impacts the prediction.",
+        requirements="Ensure the model is properly trained and SHAP values are calculated."
+    )
 
-@app.get("/", tags=["Vision"])
-def root():
-    return {"message": "Welcome to the Vision XAI API. Use specific endpoints for visual explanations."}
+
+# @app.get("/", tags=["Vision"])
+# def root():
+#     return {"message": "Welcome to the Vision XAI API. Use specific endpoints for visual explanations."}
 
 @app.get("/model-details/", tags=["Vision"], response_model=ModelDetailsResponse)
 def get_model_details():
@@ -506,7 +515,7 @@ def get_shap_single_sample(request: ShapSingleSampleRequest):
         )
 
 
-@app.get("/shap-overview/", tags=["Vision"], response_model=ShapOverviewResponse)
+@app.post("/shap-overview/", tags=["Vision"], response_model=ShapOverviewResponse)
 def get_shap_overview():
     """
     Generate SHAP overview visualizations.

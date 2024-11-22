@@ -1,10 +1,17 @@
 from pydantic import BaseModel, Field, root_validator
-from typing import Literal
+from typing import Literal, Optional
 
-# Banking schemas
+###### Banking schemas ######
 
 class LimeRequest(BaseModel):
-    row_index: int
+    row_index: int = Field(..., description="Row index of the data point to explain")
+
+    @root_validator
+    def validate_row_index(cls, values):
+        row_index = values.get("row_index")
+        if row_index < 0 or row_index >= len(X_test):
+            raise ValueError(f"Row index must be between 0 and {len(X_test) - 1}")
+        return values
 
 
 class LimeResponse(BaseModel):
@@ -12,8 +19,21 @@ class LimeResponse(BaseModel):
 
 
 class ShapRequest(BaseModel):
-    plot_type: Literal["summary", "bar", "waterfall", "heatmap", "beeswarm"]
+    plot_type: Literal["summary", "bar", "waterfall", "heatmap", "beeswarm"] = Field(..., description="Type of SHAP plot", example="summary")
+    data_point: Optional[int] = Field(None, description="Data point index for waterfall plot")
 
+    @root_validator
+    def validate_request(cls, values):
+        plot_type = values.get("plot_type")
+        data_point = values.get("data_point")
+        
+        if plot_type == "waterfall":
+            if data_point is None:
+                raise ValueError("For 'waterfall' plot_type, data_point must be specified.")
+            if data_point < 0:
+                raise ValueError(f"Data point must be a non-negative integer.")
+        
+        return values
 
 class ShapResponse(BaseModel):
     plot_url: str
@@ -24,7 +44,7 @@ class ShapResponse(BaseModel):
     requirements: str
 
 
-# Vision Schemas
+###### Vision Schemas #######
 
 class ModelDetailsResponse(BaseModel):
     model_summary: str = Field(..., description="Summary of the model architecture.")
