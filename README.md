@@ -55,6 +55,52 @@ Install dependencies:
     pip install -r requirements.txt
     ```
 
+## Build and run Docker
+
+1. To build and run the Streamlit application using Docker, follow these steps:
+
+    Build the Docker Image:
+        ```bash
+        docker build -t xai-app . -f streamlit.Dockerfile
+        ```
+
+    Run the Docker Container:
+        ```bash
+        docker run -d -p 8501:8501 --name xai-container --env-file .env xai-app
+        ```
+
+2. To build and run the FastAPI service using Docker, follow these steps:
+
+    Build the Docker Image:
+            ```bash
+            docker build -t xai-api -f api.Dockerfile .
+            ```
+
+    Build the Docker Image:
+            ```bash
+            docker run -d -p 8000:8000 --name api-container --env-file .env xai-api
+            ```
+
+3. Creating the .env File
+
+    Both the Streamlit app and the FastAPI service rely on environment variables defined in a .env file. Below is an example of how to create the .env file:
+
+    ```bash
+    # Paths for Banking Models and Data
+    BANKING_MODEL_PATH=xai_banking/utils/random_forest_model.pkl
+    BANKING_DATA_PATH=xai_banking/utils/synthetic_dataset.csv
+
+    # Paths for Vision Models and Data
+    VISION_MODEL_PATH=xaivision/model.onnx
+    VISION_DATA_PATH=xaivision/data1.h5
+
+    # API Key for FastAPI
+    API_KEYS=["Your preference API key"]
+
+    # Token for Streamlit Authentication
+    STREAMLIT_TOKEN="Your preference Streamlit token"
+    ```
+
 ## General Use Tools
 
 The general use tools that are currently offered in the repository are listed in the table below.
