@@ -1,0 +1,12 @@
+# Exclude common unnecessary files and directories
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.DS_Store
+**/.env
+.git/
+README.md
+.gitignore
+tests
+.env
+.venv

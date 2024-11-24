@@ -419,3 +419,84 @@ def find_components(model, datasample, components):
     heatmaps = heatmaps.cpu().numpy()
 
     return heatmaps
+
+def load_h5_data(file_path, dataset_name=None):
+    """
+    Load data from an HDF5 (.h5) file.
+    
+    Args:
+        file_path (str): Path to the .h5 file.
+        dataset_name (str, optional): Name of the dataset to load. If None, loads the first dataset found.
+    
+    Returns:
+        dict: A dictionary containing dataset names as keys and corresponding numpy arrays as values.
+        If dataset_name is provided, returns only the specified dataset as a numpy array.
+    """
+    if not file_path.endswith(".h5"):
+        raise ValueError("The provided file is not an HDF5 file.")
+
+    try:
+        with h5py.File(file_path, "r") as h5_file:
+            if dataset_name:
+                if dataset_name in h5_file:
+                    return np.array(h5_file[dataset_name])
+                else:
+                    raise KeyError(f"Dataset '{dataset_name}' not found in the HDF5 file.")
+            else:
+                # Load all datasets in the file if no specific dataset is requested
+                datasets = {}
+                for name in h5_file.keys():
+                    datasets[name] = np.array(h5_file[name])
+                return datasets
+    except Exception as e:
+        raise RuntimeError(f"Error loading HDF5 file: {e}")
+
+
+def preprocess_dataset(file_path):
+    with h5py.File(file_path, 'r') as h5_file:
+        # Assume the first key corresponds to the dataset
+        key = list(h5_file.keys())[0]
+        data = h5_file[key][:]
+        return data
+    
+def integrated_grad(model, input_tensor, baseline=None, steps=50):
+    """
+    Compute Integrated Gradients for the given model and input.
+
+    Args:
+        model (torch.nn.Module): The neural network model.
+        input_tensor (torch.Tensor): The input for which to compute attributions.
+        baseline (torch.Tensor, optional): The baseline input. Defaults to zero tensor if not provided.
+        steps (int): Number of steps for Riemann summation approximation of the integral.
+
+    Returns:
+        numpy.ndarray: Integrated Gradients attributions for the input.
+    """
+    model.eval()  # Set the model to evaluation mode
+
+    # Ensure input_tensor is a torch tensor
+    input_tensor = torch.tensor(input_tensor, dtype=torch.float32)
+
+    # Set the baseline to a tensor of zeros if not provided
+    if baseline is None:
+        baseline = torch.zeros_like(input_tensor)
+
+    # Generate scaled inputs
+    scaled_inputs = [
+        baseline + (float(i) / steps) * (input_tensor - baseline)
+        for i in range(steps + 1)
+    ]
+
+    # Accumulate gradients
+    total_gradients = torch.zeros_like(input_tensor, dtype=torch.float32)
+    for scaled_input in scaled_inputs:
+        scaled_input.requires_grad = True
+        output = model(scaled_input.unsqueeze(0))  # Add batch dimension
+        output.sum().backward()
+        total_gradients += scaled_input.grad
+
+    # Average the gradients and multiply by the input difference
+    avg_gradients = total_gradients / steps
+    attributions = (input_tensor - baseline) * avg_gradients
+
+    return attributions.detach().numpy()
