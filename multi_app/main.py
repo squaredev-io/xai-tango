@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import importlib
 import sys
+from css_markdowns import create_additional_css
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -22,3 +23,5 @@ if selected_app:
     # Dynamically import and execute the selected app
     app_module = importlib.import_module(apps[selected_app])
     app_module.main()
+
+create_additional_css()
