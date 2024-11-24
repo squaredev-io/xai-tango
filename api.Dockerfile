@@ -16,7 +16,7 @@ RUN wget --quiet https://github.com/conda-forge/miniforge/releases/latest/downlo
 # Add Conda to PATH
 ENV PATH="/opt/miniforge/bin:$PATH"
 
-# Copy the environment.yml file into the container
+# Copy only the environment.yml file
 COPY environment.yml .
 
 # Create the Conda environment
@@ -28,8 +28,10 @@ SHELL ["conda", "run", "-n", "xai_env", "/bin/bash", "-c"]
 # Set working directory
 WORKDIR /app
 
-# Copy application code into the container
-COPY . .
+# Copy only the required application code
+COPY api /app/api
+COPY xai_banking /app/xai_banking
+COPY xaivision /app/xaivision
 
 # Expose the application port
 EXPOSE 8000

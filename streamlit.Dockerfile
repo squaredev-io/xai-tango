@@ -16,8 +16,12 @@ RUN wget --quiet https://github.com/conda-forge/miniforge/releases/latest/downlo
 # Add Conda to PATH
 ENV PATH="/opt/miniforge/bin:$PATH"
 
-# Copy the environment.yml file
+# Copy only the required files and directories
 COPY environment.yml .
+COPY .streamlit /app/.streamlit
+COPY multi_app /app/multi_app
+COPY xai_banking /app/xai_banking
+COPY xaivision /app/xaivision
 
 # Create the Conda environment
 RUN conda env create -f environment.yml
@@ -27,9 +31,6 @@ SHELL ["conda", "run", "-n", "xai_env", "/bin/bash", "-c"]
 
 # Set working directory
 WORKDIR /app
-
-# Copy application code
-COPY . .
 
 # Expose the port Streamlit uses
 EXPOSE 8501
