@@ -10,15 +10,15 @@ def create_additional_css():
     <style>
     /* Main app background gradient */
     [data-testid="stAppViewContainer"] {
-        background: linear-gradient(to right, #0575E6, #021B79);
+        background: radial-gradient(circle, #1E5E9C, #0E3765); /* Higher contrast radial gradient */
         color: white;
     }
 
     /* Sidebar styling */
     [data-testid="stSidebar"] {
-        background: linear-gradient(to bottom, #021B79, #0575E6);
+        background: radial-gradient(circle, #0E3765, #1E5E9C); /* Match tones with darker edges */
         color: white;
-        border-right: 2px solid #fff;
+        border-right: 2px solid #ffffff;
     }
 
     /* Sidebar content text color */
@@ -29,12 +29,12 @@ def create_additional_css():
     /* Title and header styling */
     h1, h2, h3 {
         color: #ffffff;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        text-shadow: 2px 2px 6px rgba(0,0,0,0.6); /* Slightly stronger shadow for readability */
     }
 
     /* Button styling */
     button {
-        background: linear-gradient(to right, #0575E6, #021B79);
+        background: linear-gradient(to right, #1E5E9C, #0E3765); /* Consistent with darker gradient */
         color: white !important;
         border: none;
         border-radius: 5px;
@@ -45,15 +45,16 @@ def create_additional_css():
 
     button:hover {
         transform: scale(1.05);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3); /* Slightly stronger hover effect */
     }
 
     /* Input boxes */
     input, textarea {
-        background-color: #f0f8ff;
-        border: 1px solid #021B79;
+        background-color: #e1effc; /* Lightened for contrast with dark background */
+        border: 1px solid #0E3765;
         border-radius: 5px;
-        color: #021B79;
+        color: #0E3765;
+        font-weight: bold;
     }
 
     /* Streamlit progress bar and other default widgets */
@@ -71,6 +72,10 @@ def create_additional_css():
     }
     </style>
     """
+
+
+
+
 
     # Inject the CSS into the Streamlit app
     st.markdown(custom_css, unsafe_allow_html=True)
@@ -132,3 +137,81 @@ def create_additional_css():
     """
     # Inject sidebar footer
     st.sidebar.markdown(sidebar_footer, unsafe_allow_html=True)
+
+import streamlit as st
+
+def display_xai_library_info():
+    """
+    Displays an overview of the Explainable AI (XAI) library, its techniques, applications,
+    and visualizations in a Streamlit app.
+    """
+    xai_info = {
+        "overview": (
+            "A library of explainable AI (XAI) techniques is developed to enhance transparency and trust "
+            "in AI systems by offering insights into the reasoning behind model predictions and decisions."
+        ),
+        "vision_models": {
+            "description": (
+                "For vision models, techniques like SHAP, GradCAM, and Convolutional Layer Activation Analysis "
+                "are integrated to uncover pixel-level contributions and highlight the most influential regions in images."
+            ),
+            "use_cases": [
+                "Image classification",
+                "Object detection",
+                "Pixel-level feature contribution analysis"
+            ],
+            "techniques": ["SHAP", "GradCAM", "Convolutional Layer Activation Analysis"]
+        },
+        "tabular_models": {
+            "description": (
+                "For tabular models, tools like LIME, SHAP, and feature contribution analysis are applied to "
+                "identify and explain the impact of specific features on predictions."
+            ),
+            "use_cases": [
+                "Risk classification",
+                "Credit scoring",
+                "Feature-level analysis of predictions"
+            ],
+            "techniques": ["LIME", "SHAP", "Feature Contribution Analysis"]
+        },
+        "global_vs_local": {
+            "description": (
+                "The framework supports both global and local explainability. Global methods provide an overarching "
+                "view of feature importance across datasets, while local approaches offer granular explanations for individual predictions."
+            )
+        },
+        "visualization": {
+            "description": (
+                "Visualization plays a key role in this library. Outputs such as SHAP summary plots, waterfall plots, "
+                "and activation heatmaps allow users to intuitively interpret the results."
+            ),
+            "techniques": ["SHAP summary plots", "Waterfall plots", "Activation heatmaps"]
+        },
+        "impact": (
+            "Through these efforts, privacy and trust concerns are addressed, while gaps in the design or deployment "
+            "of AI algorithms are identified and rectified."
+        )
+    }
+
+    # Display XAI information
+    st.title("Explainable AI Library Overview")
+    st.write(xai_info["overview"])
+    
+    st.subheader("Vision Models")
+    st.write(xai_info["vision_models"]["description"])
+    st.write("**Use Cases:**", ", ".join(xai_info["vision_models"]["use_cases"]))
+    st.write("**Techniques:**", ", ".join(xai_info["vision_models"]["techniques"]))
+
+    st.subheader("Tabular Models")
+    st.write(xai_info["tabular_models"]["description"])
+    st.write("**Use Cases:**", ", ".join(xai_info["tabular_models"]["use_cases"]))
+    st.write("**Techniques:**", ", ".join(xai_info["tabular_models"]["techniques"]))
+
+    st.subheader("Global vs. Local Explainability")
+    st.write(xai_info["global_vs_local"]["description"])
+
+    st.subheader("Visualization Techniques")
+    st.write(xai_info["visualization"]["description"])
+    st.write("**Techniques:**", ", ".join(xai_info["visualization"]["techniques"]))
+
+    st.info(xai_info["impact"])
