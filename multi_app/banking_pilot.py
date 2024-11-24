@@ -4,15 +4,18 @@ import pandas as pd
 from xai_banking.utils.data_processing import cached_preprocess_data
 from xai_banking.utils.explainers import lime_explainer, shap_explainer
 from xai_banking.utils.utils import *
+from multi_app.env_utils import load_env_vars
 import matplotlib.pyplot as plt
 import shap
 from sklearn.model_selection import train_test_split
 
-def main():
 
+def main(): 
+    
+    BANKING_MODEL_PATH, BANKING_DATA_PATH, VISION_MODEL_PATH, VISION_DATA_PATH = load_env_vars()
     # Default file paths
-    DEFAULT_MODEL_PATH = "xai_banking/utils/random_forest_model.pkl"
-    DEFAULT_DATA_PATH = "xai_banking/utils/synthetic_dataset.csv"
+    DEFAULT_MODEL_PATH = BANKING_MODEL_PATH
+    DEFAULT_DATA_PATH = BANKING_DATA_PATH
 
     # Initialize session state
     if "model" not in st.session_state:

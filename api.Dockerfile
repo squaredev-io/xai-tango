@@ -37,4 +37,4 @@ COPY xaivision /app/xaivision
 EXPOSE 8000
 
 # Run the FastAPI application using Conda environment
-CMD ["conda", "run", "--no-capture-output", "-n", "xai_env", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["conda", "run", "--no-capture-output", "-n", "xai_env", "uvicorn", "api.src.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, root_validator, ValidationError
 import os
+from dotenv import load_dotenv
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import pickle
@@ -12,10 +13,12 @@ import matplotlib.pyplot as plt
 import matplotlib
 from io import BytesIO
 import base64
-from api.schemas import *
+from api.src.core.schemas.schemas import *
+from api.src.core.services.security import get_api_key
 from xaivision.utils import *
 from xaivision.xai_tools import *
 
+load_dotenv()
 # Agg backend for non-GUI rendering
 matplotlib.use("Agg")  
 app = FastAPI(
@@ -35,12 +38,17 @@ app.description += (
     "- **Use Vision endpoints like `/model-details` for Vision tasks.**\n"
     "- **Refer to each endpoint's documentation for usage examples.**"
 )
-# Preloaded banking_model and dataset paths
-BANKING_MODEL_PATH = "xai_banking/utils/random_forest_model.pkl"
-BANKING_DATA_PATH = "xai_banking/utils/synthetic_dataset.csv"
-VISION_MODEL_PATH = "xaivision/model.onnx"
-VISION_DATA_PATH = "xaivision/data1.h5"
 
+# Access the .env variables
+BANKING_MODEL_PATH = os.getenv("BANKING_MODEL_PATH")
+BANKING_DATA_PATH = os.getenv("BANKING_DATA_PATH")
+VISION_MODEL_PATH = os.getenv("VISION_MODEL_PATH")
+VISION_DATA_PATH = os.getenv("VISION_DATA_PATH")
+
+required_vars = ["BANKING_MODEL_PATH", "BANKING_DATA_PATH", "VISION_MODEL_PATH", "VISION_DATA_PATH"]
+for var in required_vars:
+    if not os.getenv(var):
+        raise ValueError(f"Environment variable {var} is not set.")
 
 # Load banking_model and dataset at startup
 banking_model = None
@@ -111,7 +119,7 @@ def root():
     }
 
 
-@app.post("/lime/", tags=["Banking"], response_model=LimeResponse)
+@app.post("/lime/", tags=["Banking"], response_model=LimeResponse, dependencies=[Depends(get_api_key)])
 def lime_explanation(request: LimeRequest):
     """
     Generate LIME explanation for a specific row in the test dataset.
@@ -143,7 +151,7 @@ def lime_explanation(request: LimeRequest):
 
 
 
-@app.post("/shap/", tags=["Banking"], response_model=ShapResponse)
+@app.post("/shap/", tags=["Banking"], response_model=ShapResponse, dependencies=[Depends(get_api_key)])
 def shap_explanation(request: ShapRequest):
     """
     Generate SHAP explanation for the test dataset.
@@ -198,7 +206,7 @@ def shap_explanation(request: ShapRequest):
     )
 
 
-@app.get("/model-details/", tags=["Vision"], response_model=ModelDetailsResponse)
+@app.get("/model-details/", tags=["Vision"], response_model=ModelDetailsResponse, dependencies=[Depends(get_api_key)])
 def get_model_details():
     """
     Retrieve model architecture and details.
@@ -224,7 +232,7 @@ def get_model_details():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error accessing dataset: {str(e)}")
 
-@app.post("/sample-details/", tags=["Vision"])
+@app.post("/sample-details/", tags=["Vision"], dependencies=[Depends(get_api_key)])
 def get_sample_details(request: SampleDetailsRequest):
     """
     Retrieve details of a specific data sample.
@@ -261,7 +269,7 @@ def get_sample_details(request: SampleDetailsRequest):
         raise HTTPException(status_code=500, detail=f"Error processing sample details: {str(e)}")
 
 
-@app.post("/convolution-features/", tags=["Vision"])
+@app.post("/convolution-features/", tags=["Vision"], dependencies=[Depends(get_api_key)])
 def get_convolution_features(request: ConvolutionalFeaturesRequest):
     """
     Generate convolutional feature visualizations for a specific sample.
@@ -316,7 +324,7 @@ def get_convolution_features(request: ConvolutionalFeaturesRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing convolution features: {str(e)}")
 
-@app.post("/sample-components/", tags=["Vision"], response_model=SampleComponentsResponse)
+@app.post("/sample-components/", tags=["Vision"], response_model=SampleComponentsResponse, dependencies=[Depends(get_api_key)])
 def get_sample_components(request: SampleComponentsRequest):
     """
     Visualize independent components for a specific sample.
@@ -387,7 +395,7 @@ def get_sample_components(request: SampleComponentsRequest):
             status_code=500, detail=f"Error processing sample components: {str(e)}"
         )
 
-@app.post("/integrated-gradients/", tags=["Vision"], response_model=IntegratedGradientsResponse)
+@app.post("/integrated-gradients/", tags=["Vision"], response_model=IntegratedGradientsResponse, dependencies=[Depends(get_api_key)])
 def get_integrated_gradients(request: IntegratedGradientsRequest):
     """
     Generate Integrated Gradients visualizations.
@@ -435,7 +443,7 @@ def get_integrated_gradients(request: IntegratedGradientsRequest):
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=f"Error processing integrated gradients: {str(e)}")
 
-@app.post("/deep-lift/", tags=["Vision"], response_model=DeepLiftResponse)
+@app.post("/deep-lift/", tags=["Vision"], response_model=DeepLiftResponse, dependencies=[Depends(get_api_key)])
 def get_deep_lift(request: DeepLiftRequest):
     """
     Generate DeepLift visualizations.
@@ -499,7 +507,7 @@ def get_deep_lift(request: DeepLiftRequest):
             status_code=500, detail=f"Error processing DeepLift: {str(e)}"
         )
 
-@app.post("/shap-single/", tags=["Vision"], response_model=ShapSingleSampleResponse)
+@app.post("/shap-single/", tags=["Vision"], response_model=ShapSingleSampleResponse,dependencies=[Depends(get_api_key)])
 def get_shap_single_sample(request: ShapSingleSampleRequest):
     """
     Generate SHAP visualizations for a single sample.
@@ -550,7 +558,7 @@ def get_shap_single_sample(request: ShapSingleSampleRequest):
         )
 
 
-@app.post("/shap-overview/", tags=["Vision"], response_model=ShapOverviewResponse)
+@app.post("/shap-overview/", tags=["Vision"], response_model=ShapOverviewResponse,dependencies=[Depends(get_api_key)])
 def get_shap_overview():
     """
     Generate SHAP overview visualizations.
