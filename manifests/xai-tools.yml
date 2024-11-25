@@ -1,0 +1,54 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xai-tools
+  namespace: tango-development
+  labels:
+    app: xai-tools
+    type: front-end
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: xai-tools
+      type: front-end
+  template:
+    metadata:
+      labels:
+        app: xai-tools
+        type: front-end
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: streamlit-app
+          image: harbor.tango.rid-intrasoft.eu/xai/xai-tools:latest_dev
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8501
+        - name: api
+          image: harbor.tango.rid-intrasoft.eu/xai/xai-api:latest_dev
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xai-tools
+  namespace: tango-development
+  labels:
+    app: xai-tools
+spec:
+  selector:
+    app: xai-tools
+  ports:
+    - name: streamlit
+      port: 80
+      targetPort: 8501
+    - name: api
+      port: 8080
+      targetPort: 8000
+  type: ClusterIP
