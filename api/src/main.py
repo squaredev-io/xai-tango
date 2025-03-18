@@ -20,7 +20,7 @@ from xaivision.xai_tools import *
 
 load_dotenv()
 # Agg backend for non-GUI rendering
-matplotlib.use("Agg")  
+matplotlib.use("Agg")
 app = FastAPI(
     title="XAI API",
     description="An API for generating explanations and insights using XAI tools for Banking and Vision models in Tango Project.",
@@ -80,11 +80,11 @@ def load_resources():
     y = processed_data["label_fraud_post"]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
- 
+
 class LimeRequest(BaseModel):
     row_index: int = Field(..., description="Row index of the data point to explain")
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def validate_row_index(cls, values):
         row_index = values.get("row_index")
         if row_index < 0 or row_index >= len(X_test):
@@ -96,7 +96,7 @@ class ShapRequest(BaseModel):
     plot_type: str = Field(..., description="Type of SHAP plot", example="summary")
     data_point: int = Field(None, description="Data point index for waterfall plot")
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def validate_request(cls, values):
         plot_type = values.get("plot_type")
         data_point = values.get("data_point")
@@ -135,7 +135,7 @@ def lime_explanation(request: LimeRequest):
         X_train=X_train,
         X_test=X_test,
         selected_row_index=request.row_index,
-        class_names=["Not Fraud", "Fraud"]
+        class_names=["Not Fraud", "Fraud"],
     )
 
     # Save explanation plot as bytes
@@ -148,7 +148,6 @@ def lime_explanation(request: LimeRequest):
     # Encode image in base64
     image_base64 = base64.b64encode(buf.read()).decode("utf-8")
     return LimeResponse(plot_url=image_base64)
-
 
 
 @app.post("/shap/", tags=["Banking"], response_model=ShapResponse, dependencies=[Depends(get_api_key)])
@@ -202,7 +201,7 @@ def shap_explanation(request: ShapRequest):
         description="This plot shows the SHAP explanation for the model's prediction.",
         where_it_helps="Helps in understanding feature importance.",
         how_to_use="Use this plot to see how each feature impacts the prediction.",
-        requirements="Ensure the model is properly trained and SHAP values are calculated."
+        requirements="Ensure the model is properly trained and SHAP values are calculated.",
     )
 
 
@@ -232,6 +231,7 @@ def get_model_details():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error accessing dataset: {str(e)}")
 
+
 @app.post("/sample-details/", tags=["Vision"], dependencies=[Depends(get_api_key)])
 def get_sample_details(request: SampleDetailsRequest):
     """
@@ -240,7 +240,7 @@ def get_sample_details(request: SampleDetailsRequest):
     try:
         # Fetch the sample from the dataset
         sample_input = dataset[request.sample_index]  # Assuming dataset returns a single array
-        
+
         # Extract ground_truth if it's embedded or known separately
         # Placeholder ground_truth if not explicitly provided
         ground_truth = "Unknown"  # Replace this with actual logic
@@ -263,7 +263,7 @@ def get_sample_details(request: SampleDetailsRequest):
         return SampleDetailsResponse(
             model_output=model_output,
             ground_truth=ground_truth,
-            sample_image=image_base64  # This ensures the required field is populated
+            sample_image=image_base64,  # This ensures the required field is populated
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing sample details: {str(e)}")
@@ -287,13 +287,11 @@ def get_convolution_features(request: ConvolutionalFeaturesRequest):
         # Dynamically determine reshape dimensions for a square input
         total_elements = sample_input.size
         channels = 1  # Assuming grayscale for simplicity
-        height = int(total_elements ** 0.5)  # Assume square
+        height = int(total_elements**0.5)  # Assume square
         width = int(total_elements / height)
 
         if height * width != total_elements:
-            raise ValueError(
-                f"Cannot reshape array of size {total_elements} into a valid image shape."
-            )
+            raise ValueError(f"Cannot reshape array of size {total_elements} into a valid image shape.")
 
         # Reshape to 4D: [batch_size, channels, height, width]
         sample_input = np.reshape(sample_input, (1, channels, height, width))
@@ -324,7 +322,10 @@ def get_convolution_features(request: ConvolutionalFeaturesRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing convolution features: {str(e)}")
 
-@app.post("/sample-components/", tags=["Vision"], response_model=SampleComponentsResponse, dependencies=[Depends(get_api_key)])
+
+@app.post(
+    "/sample-components/", tags=["Vision"], response_model=SampleComponentsResponse, dependencies=[Depends(get_api_key)]
+)
 def get_sample_components(request: SampleComponentsRequest):
     """
     Visualize independent components for a specific sample.
@@ -332,9 +333,7 @@ def get_sample_components(request: SampleComponentsRequest):
     try:
         # Validate number of components
         if request.num_components < 2:
-            raise HTTPException(
-                status_code=400, detail="Number of components must be at least 2."
-            )
+            raise HTTPException(status_code=400, detail="Number of components must be at least 2.")
 
         # Fetch sample data
         sample_data = dataset[request.sample_index]
@@ -387,15 +386,17 @@ def get_sample_components(request: SampleComponentsRequest):
     except IndexError:
         raise HTTPException(status_code=400, detail="Invalid sample index.")
     except ValueError as e:
-        raise HTTPException(
-            status_code=400, detail=f"Error processing sample components: {str(e)}"
-        )
+        raise HTTPException(status_code=400, detail=f"Error processing sample components: {str(e)}")
     except RuntimeError as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error processing sample components: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error processing sample components: {str(e)}")
 
-@app.post("/integrated-gradients/", tags=["Vision"], response_model=IntegratedGradientsResponse, dependencies=[Depends(get_api_key)])
+
+@app.post(
+    "/integrated-gradients/",
+    tags=["Vision"],
+    response_model=IntegratedGradientsResponse,
+    dependencies=[Depends(get_api_key)],
+)
 def get_integrated_gradients(request: IntegratedGradientsRequest):
     """
     Generate Integrated Gradients visualizations.
@@ -442,6 +443,7 @@ def get_integrated_gradients(request: IntegratedGradientsRequest):
         raise HTTPException(status_code=400, detail=f"Error processing integrated gradients: {str(e)}")
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=f"Error processing integrated gradients: {str(e)}")
+
 
 @app.post("/deep-lift/", tags=["Vision"], response_model=DeepLiftResponse, dependencies=[Depends(get_api_key)])
 def get_deep_lift(request: DeepLiftRequest):
@@ -499,15 +501,14 @@ def get_deep_lift(request: DeepLiftRequest):
     except IndexError:
         raise HTTPException(status_code=400, detail="Invalid sample index.")
     except ValueError as e:
-        raise HTTPException(
-            status_code=400, detail=f"Error processing DeepLift: {str(e)}"
-        )
+        raise HTTPException(status_code=400, detail=f"Error processing DeepLift: {str(e)}")
     except RuntimeError as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error processing DeepLift: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error processing DeepLift: {str(e)}")
 
-@app.post("/shap-single/", tags=["Vision"], response_model=ShapSingleSampleResponse,dependencies=[Depends(get_api_key)])
+
+@app.post(
+    "/shap-single/", tags=["Vision"], response_model=ShapSingleSampleResponse, dependencies=[Depends(get_api_key)]
+)
 def get_shap_single_sample(request: ShapSingleSampleRequest):
     """
     Generate SHAP visualizations for a single sample.
@@ -549,16 +550,12 @@ def get_shap_single_sample(request: ShapSingleSampleRequest):
     except IndexError:
         raise HTTPException(status_code=400, detail="Invalid sample index.")
     except ValueError as e:
-        raise HTTPException(
-            status_code=400, detail=f"Error processing SHAP: {str(e)}"
-        )
+        raise HTTPException(status_code=400, detail=f"Error processing SHAP: {str(e)}")
     except RuntimeError as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error processing SHAP: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error processing SHAP: {str(e)}")
 
 
-@app.post("/shap-overview/", tags=["Vision"], response_model=ShapOverviewResponse,dependencies=[Depends(get_api_key)])
+@app.post("/shap-overview/", tags=["Vision"], response_model=ShapOverviewResponse, dependencies=[Depends(get_api_key)])
 def get_shap_overview():
     """
     Generate SHAP overview visualizations.

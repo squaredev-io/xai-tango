@@ -1,5 +1,5 @@
 from functools import lru_cache
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 import os
 from typing import List, Union
 from pydantic import validator
@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     class Config:
         # Specify the `.env` file based on ENV value or fallback to `.env`
         env_file = os.getenv("ENV") and f".env.{os.getenv('ENV')}" or ".env"
+        extra = "allow"  # Allow extra environment variables if necessary
 
 
 @lru_cache()

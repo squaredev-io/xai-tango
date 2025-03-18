@@ -2,16 +2,21 @@ import streamlit as st
 import pickle
 import pandas as pd
 from xai_banking.utils.data_processing import cached_preprocess_data
-from xai_banking.utils.explainers import lime_explainer, shap_explainer
+from xai_banking.utils.explainers import lime_explainer, shap_explainer, KerasModelWrapper
 from xai_banking.utils.utils import *
 from multi_app.env_utils import load_env_vars
 import matplotlib.pyplot as plt
 import shap
 from sklearn.model_selection import train_test_split
+from tensorflow.keras.models import load_model
+import io
+import numpy as np
+import tensorflow as tf
+import json
 
 
-def main(): 
-    
+def main():
+
     BANKING_MODEL_PATH, BANKING_DATA_PATH, VISION_MODEL_PATH, VISION_DATA_PATH = load_env_vars()
     # Default file paths
     DEFAULT_MODEL_PATH = BANKING_MODEL_PATH
@@ -43,12 +48,37 @@ def main():
     st.title("Model Explainability Tool")
     st.sidebar.header("Upload Model and Dataset")
 
-
     # Model Upload
-    model_path = st.sidebar.file_uploader("Upload Model (.pkl)", type=["pkl"])
+    model_path = st.sidebar.file_uploader("Upload Model (.pkl)", type=["pkl", "keras"])
+    is_keras_model = False
     if model_path:
-        st.session_state["model"] = pickle.load(model_path) 
-        st.sidebar.success("Model loaded successfully!")
+        # st.session_state["model"] = pickle.load(model_path)
+        # st.sidebar.success("Model loaded successfully!")
+        file_name = model_path.name
+        if file_name.endswith(".pkl"):
+            pkl_model = pickle.load(model_path)
+            if isinstance(pkl_model, dict):
+                is_keras_model = True
+                raw_config = json.loads(pkl_model["config"])
+                model = tf.keras.utils.deserialize_keras_object(raw_config)
+                model.set_weights(pkl_model["weights"])
+                model.compile(
+                    optimizer="adam",
+                    loss="binary_crossentropy",
+                    metrics=["accuracy", tf.keras.metrics.Precision(), tf.keras.metrics.Recall()],
+                )
+                pkl_model = model
+
+            st.session_state["model"] = pkl_model
+            st.session_state["is_keras_model"] = is_keras_model
+            st.session_state["model_uploaded"] = True
+            st.sidebar.success("Pickle model loaded successfully!")
+        elif file_name.endswith(".keras"):
+            model_bytes = io.BytesIO(model_path.read())
+            st.session_state["model"] = load_model(model_bytes)
+            st.session_state["model_uploaded"] = True
+            st.session_state["is_keras_model"] = True
+            st.sidebar.success("Keras model loaded successfully!")
 
     # Dataset Upload
     data_path = st.sidebar.file_uploader("Upload Dataset (.csv)", type=["csv"])
@@ -59,14 +89,26 @@ def main():
     col1, col2 = st.sidebar.columns(2)
 
     with col1:
-        if st.button("Use Default Data"):
+        if st.button("Use Mock Data"):
             st.session_state["model"] = pickle.load(open(DEFAULT_MODEL_PATH, "rb"))
-            st.session_state["data"] = pd.read_csv(DEFAULT_DATA_PATH)
+            st.session_state["data"] = cached_preprocess_data(pd.read_csv(DEFAULT_DATA_PATH))
             st.success("Default model and dataset loaded successfully!")
 
     with col2:
         if st.button("Reset Session"):
-            for key in ["model", "data", "processed_data", "X_train", "X_test", "y_train", "y_test"]:
+            for key in [
+                "model",
+                "data",
+                "processed_data",
+                "X_train",
+                "X_test",
+                "y_train",
+                "y_test",
+                "is_keras_model",
+                "uploaded_file_name",
+                "model_uploaded",
+                "data_uploaded",
+            ]:
                 st.session_state[key] = None
             st.success("Session has been reset.")
 
@@ -74,7 +116,7 @@ def main():
     if st.session_state["model"] and st.session_state["data"] is not None:
         # Ensure processed_data is created if not already done
         if st.session_state["processed_data"] is None:
-            st.session_state["processed_data"] = cached_preprocess_data(st.session_state["data"])
+            st.session_state["processed_data"] = st.session_state["data"]
 
         # Display processed data safely
         if st.session_state["processed_data"] is not None:
@@ -82,11 +124,9 @@ def main():
                 st.dataframe(st.session_state["processed_data"].head())
 
             # Splitting data into training and testing sets
-            X = st.session_state["processed_data"].drop(columns=["label_fraud_post"])
-            y = st.session_state["processed_data"]["label_fraud_post"]
-            X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=0.2, random_state=42, stratify=y
-            )
+            X = st.session_state["processed_data"].iloc[:, :-1]
+            y = st.session_state["processed_data"].iloc[:, -1]
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
             st.session_state["X_train"] = X_train
             st.session_state["X_test"] = X_test
             st.session_state["y_train"] = y_train
@@ -101,26 +141,26 @@ def main():
     if method == "Lime" and st.session_state["X_test"] is not None:
         st.subheader("Select Row for Explanation")
         selected_row_index = st.number_input(
-            "Select Row Index",
-            min_value=0,
-            max_value=len(st.session_state["X_test"]) - 1,
-            value=0,
-            step=1
+            "Select Row Index", min_value=0, max_value=len(st.session_state["X_test"]) - 1, value=0, step=1
         )
         st.info(f"Selected row: {selected_row_index}")
 
     # Generate Explanations
     if st.button("Generate Explanations"):
         if method == "Lime" and st.session_state["model"] and st.session_state["X_train"] is not None:
-            st.subheader("Lime Explanation")
+            model_for_lime = (
+                KerasModelWrapper(st.session_state["model"])
+                if st.session_state.get("is_keras_model")
+                else st.session_state["model"]
+            )
             explanation = lime_explainer(
-                st.session_state["model"],
+                model_for_lime,
                 st.session_state["X_train"],
                 st.session_state["X_test"],
                 selected_row_index,
-                class_names=["Not Fraud", "Fraud"]
+                class_names=["Not Fraud", "Fraud"],
             )
-            
+
             st.write("Explanation as Text:")
             st.text(explanation.as_list())
             st.pyplot(explanation.as_pyplot_figure())
@@ -132,12 +172,13 @@ def main():
             if "shap_values" not in st.session_state:
                 st.session_state["shap_values"] = shap_explainer(
                     st.session_state["model"],
-                    st.session_state["X_test"]
+                    st.session_state["X_test"],
+                    keras_model=st.session_state.get("is_keras_model", False),
                 )
             shap_values = st.session_state["shap_values"]
 
             st.header("SHAP Explanation")
-            
+
             # 1. SHAP Summary Plot
             st.subheader("Summary Plot")
             with st.expander(descriptions["summary_plot"]["title"]):
@@ -195,7 +236,7 @@ def main():
                 max_value=len(st.session_state["X_test"]) - 1,
                 value=0,
                 step=1,
-                key="waterfall_instance"
+                key="waterfall_instance",
             )
             st.info(f"Displaying Waterfall Plot for Data Point: {selected_instance}")
 

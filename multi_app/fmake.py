@@ -4,25 +4,28 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
-from xaivision.utils import (load_models, model_details, sample_details,
-                             conv2d_feature_vis_extra_layers,
-                             conv2d_feature_vis_no_extra_layers,
-                             find_components, MedPCacheDataset_normalised)
-from xaivision.xai_tools import (vision_shap, integrated_grad, deeplift,
-                                 shap_overview)
+from xaivision.utils import (
+    load_models,
+    model_details,
+    sample_details,
+    conv2d_feature_vis_extra_layers,
+    conv2d_feature_vis_no_extra_layers,
+    find_components,
+    MedPCacheDataset_normalised,
+    PoreDataset,
+)
+from xaivision.xai_tools import vision_shap, integrated_grad, deeplift, shap_overview
+
 
 def main():
 
     def delete_torch_model_files():
-        file_1 = os.path.join(str(Path(__file__).resolve().parent),
-                            "TorchModel_torchviz")
-        file_2 = os.path.join(str(Path(__file__).resolve().parent),
-                            "TorchModel_torchviz.png")
+        file_1 = os.path.join(str(Path(__file__).resolve().parent), "TorchModel_torchviz")
+        file_2 = os.path.join(str(Path(__file__).resolve().parent), "TorchModel_torchviz.png")
         if os.path.exists(file_1):
             os.remove(file_1)
         if os.path.exists(file_2):
             os.remove(file_2)
-
 
     background = 40
     samples = 10
@@ -40,7 +43,10 @@ def main():
     data_flag = False
 
     if uploaded_data is not None:
-        ds = MedPCacheDataset_normalised(uploaded_data)
+        if uploaded_data.name == "pore_data.h5":
+            ds = PoreDataset(uploaded_data)
+        else:
+            ds = MedPCacheDataset_normalised(uploaded_data)
 
     if uploaded_model is not None and uploaded_data is not None:
 
@@ -66,8 +72,7 @@ def main():
             sample_size = model_input.shape
             dot, model_summary = model_details(model_py, sample_size)
             dot = dot.render("TorchModel_torchviz", format="png")
-            image_path = os.path.join(str(Path(__file__).resolve().parent),
-                                    "TorchModel_torchviz.png")
+            image_path = os.path.join(str(Path(__file__).resolve().parent), "TorchModel_torchviz.png")
             st.image(dot)
             # Display model summary
             st.subheader("Model Architecture:")
@@ -97,8 +102,7 @@ def main():
             if sample_number is not None:
                 model_input, ground_truth = ds.__getitem__(sample_number)
 
-                arrays, names = conv2d_feature_vis_no_extra_layers(
-                    model_py, model_input)
+                arrays, names = conv2d_feature_vis_no_extra_layers(model_py, model_input)
 
                 num_arrays = len(arrays)
                 # Calculate the number of rows needed
@@ -121,8 +125,7 @@ def main():
             if sample_number is not None:
                 model_input, ground_truth = ds.__getitem__(sample_number)
 
-                arrays, names = conv2d_feature_vis_extra_layers(
-                    model_py, model_input)
+                arrays, names = conv2d_feature_vis_extra_layers(model_py, model_input)
                 num_arrays = len(arrays)
 
                 # Calculate the number of rows needed
@@ -148,14 +151,10 @@ def main():
                     st.write("No valid number for components")
                 else:
                     model_input, ground_truth = ds.__getitem__(sample_number)
-                    heatmaps = find_components(model_py, model_input,
-                                            num_components)
+                    heatmaps = find_components(model_py, model_input, num_components)
 
-                    num_rows = (num_components +
-                                1) // 2  # Calculate the number of rows needed
-                    fig, axes = plt.subplots(num_rows,
-                                            2,
-                                            figsize=(10, 5 * num_rows))
+                    num_rows = (num_components + 1) // 2  # Calculate the number of rows needed
+                    fig, axes = plt.subplots(num_rows, 2, figsize=(10, 5 * num_rows))
                     fig.tight_layout(pad=3.0)
 
                     for i in range(num_components):
@@ -189,9 +188,7 @@ def main():
 
                     # Calculate the number of rows needed
                     num_rows = (len(grads) + 1) // 2
-                    fig, axes = plt.subplots(num_rows,
-                                            2,
-                                            figsize=(10, 5 * num_rows))
+                    fig, axes = plt.subplots(num_rows, 2, figsize=(10, 5 * num_rows))
                     fig.tight_layout(pad=3.0)
 
                     for i, array in enumerate(grads):
@@ -227,11 +224,8 @@ def main():
                     ax.set_title("integrated grad")
                 else:
 
-                    num_rows = (len(dl_arrays) +
-                                1) // 2  # Calculate the number of rows needed
-                    fig, axes = plt.subplots(num_rows,
-                                            2,
-                                            figsize=(10, 5 * num_rows))
+                    num_rows = (len(dl_arrays) + 1) // 2  # Calculate the number of rows needed
+                    fig, axes = plt.subplots(num_rows, 2, figsize=(10, 5 * num_rows))
                     fig.tight_layout(pad=3.0)
 
                     for i, array in enumerate(dl_arrays):
@@ -258,7 +252,7 @@ def main():
             sample_number = int(st.number_input("Sample Number:", step=1))
             if sample_number is not None:
                 model_input, ground_truth = ds.__getitem__(sample_number)
-                plots = vision_shap(uploaded_data, samples, model_py, model_input)
+                plots, shap_numpy = vision_shap(uploaded_data, samples, model_py, model_input)
                 for i, plot in enumerate(plots):
                     st.subheader("SHAP output for target " + str(i))
                     st.pyplot(plot)
@@ -268,6 +262,5 @@ def main():
             st.header("SHAP overview")
             plots = shap_overview(uploaded_data, background, samples, model_py)
             for i, plot in enumerate(plots):
-                st.subheader("SHAP pixels overview contribution for target " +
-                            str(i))
+                st.subheader("SHAP pixels overview contribution for target " + str(i))
                 st.pyplot(plot)

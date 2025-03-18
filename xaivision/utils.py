@@ -12,16 +12,34 @@ import onnx
 
 import sys
 from pathlib import Path
+
 # from memory_profiler import profile
 
 sys.path.append(str(Path(__file__).resolve().parent))
 try:
     from nmf_func import NMF
-except (Exception, ):
+except (Exception,):
     raise
 
 
-class MedPCacheDataset_normalised():
+class PoreDataset:
+    def __init__(self, cache_fp, **_):
+        self.cache_fp = cache_fp
+
+        with h5py.File(self.cache_fp, "r") as h5f:
+            self._len = len(h5f["data_in"])
+
+    def __len__(self):
+        return self._len
+
+    def __getitem__(self, index):
+        with h5py.File(self.cache_fp, "r") as h5f:
+            x = np.array(h5f["data_in"][index], dtype=np.float32).reshape(1, 21, 21)  # [None, ...]
+            y = np.array(h5f["data_out"][index], dtype=np.float32)
+        return x, y
+
+
+class MedPCacheDataset_normalised:
     """
     Dataset interface of RAISE-LPBF-Laser benchmark cache single frame power
     prediction.
@@ -29,8 +47,7 @@ class MedPCacheDataset_normalised():
 
     def __init__(self, cache_fp, nominal_laser_params=[900, 215], **_):
         self.cache_fp = cache_fp
-        self.nominal_laser_params = np.array(nominal_laser_params).astype(
-            np.float32)
+        self.nominal_laser_params = np.array(nominal_laser_params).astype(np.float32)
 
         with h5py.File(self.cache_fp, "r") as h5f:
             self._len = len(h5f["x"])
@@ -40,10 +57,8 @@ class MedPCacheDataset_normalised():
 
     def __getitem__(self, index):
         with h5py.File(self.cache_fp, "r") as h5f:
-            x = (np.expand_dims(np.array(h5f["x"][index]).astype(np.float32),
-                                axis=0))
-            y = (np.array(h5f["y"][index], dtype=np.float32) /
-                 self.nominal_laser_params)
+            x = np.expand_dims(np.array(h5f["x"][index]).astype(np.float32), axis=0)
+            y = np.array(h5f["y"][index], dtype=np.float32) / self.nominal_laser_params
         return x, y
 
 
@@ -52,8 +67,7 @@ class YourModelWithoutLastLayers(nn.Module):
     def __init__(self, original_model, remove_layers):
         super(YourModelWithoutLastLayers, self).__init__()
 
-        self.features = nn.Sequential(
-            *list(original_model.children())[:-1 * remove_layers])
+        self.features = nn.Sequential(*list(original_model.children())[: -1 * remove_layers])
 
     def forward(self, x):
         # Forward pass through the modified layers
@@ -143,8 +157,7 @@ def check_onnx_torch_out(onnx_model_path, torch_model, model_input):
     diagnosis = diagnosis + "ONNX output : " + str(outputs_ort) + "\n"
     diagnosis = diagnosis + "-------------------------------\n"
     diagnosis = diagnosis + "Difference between onnx and pytorch model: "
-    diagnosis = diagnosis + str(
-        torch.max(torch.abs(torch.from_numpy(outputs_ort[0]) - out_torch)))
+    diagnosis = diagnosis + str(torch.max(torch.abs(torch.from_numpy(outputs_ort[0]) - out_torch)))
     # print(np.allclose(outputs_ort, out_torch.detach().numpy(), atol=1.e-7))
     return diagnosis
 
@@ -185,21 +198,21 @@ def model_details(model, data_size):
     y = model(x)
 
     # generate a model architecture visualization
-    dot = make_dot(y.mean(),
-                   params=dict(model.named_parameters()),
-                   show_attrs=True,
-                   show_saved=True)
+    dot = make_dot(y.mean(), params=dict(model.named_parameters()), show_attrs=True, show_saved=True)
 
     sum = summary(model, input_size=x.shape, verbose=0)
 
     model_output = y.squeeze(0).detach().numpy()
     model_input_txt = "Model input shape: " + str(data_size)
     model_output_txt = "Model output shape: " + str(model_output.shape)
-    summary_with_text = str(
-        sum) + "\n" + model_input_txt + "\n" + model_output_txt
-    summary_with_text = summary_with_text + "\n" + "=\
+    summary_with_text = str(sum) + "\n" + model_input_txt + "\n" + model_output_txt
+    summary_with_text = (
+        summary_with_text
+        + "\n"
+        + "=\
 =======================================================================\
 =================="
+    )
 
     return dot, summary_with_text
 
@@ -225,8 +238,7 @@ def sample_details(model, datapoint):
     data_inp = np.expand_dims(datapoint, axis=0)
     data_torch = torch.from_numpy(data_inp)
     model.eval()
-    out_torch = model(data_torch).squeeze(0).detach().numpy().astype(
-        np.float64)
+    out_torch = model(data_torch).squeeze(0).detach().numpy().astype(np.float64)
 
     return out_torch
 
@@ -355,7 +367,7 @@ def conv2d_feature_vis_extra_layers(model, datasample):
     data_inp = np.expand_dims(datasample, axis=0)
     image = torch.from_numpy(data_inp)
 
-    for i, layer in enumerate(layers[:spot_convs[-1] + 1]):
+    for i, layer in enumerate(layers[: spot_convs[-1] + 1]):
         image = layer(image)
         if i in spot_convs:
             conv_outputs.append(image)
@@ -399,35 +411,32 @@ def find_components(model, datasample, components):
     new_model = YourModelWithoutLastLayers(model, remove_until_conv)
     features = new_model(image)
 
-    flat_features = features.permute(0, 2, 3, 1).contiguous().view(
-        (-1, features.size(1)))  # NxCxHxW -> (N*H*W)xC
+    flat_features = features.permute(0, 2, 3, 1).contiguous().view((-1, features.size(1)))  # NxCxHxW -> (N*H*W)xC
 
     K = components
     with torch.no_grad():
         W, _ = NMF(flat_features, K, random_seed=0, cuda=False, max_iter=50)
 
-    heatmaps = W.cpu().view(features.size(0), features.size(2),
-                            features.size(3),
-                            K).permute(0, 3, 1, 2)  # (N*H*W)xK -> NxKxHxW
+    heatmaps = (
+        W.cpu().view(features.size(0), features.size(2), features.size(3), K).permute(0, 3, 1, 2)
+    )  # (N*H*W)xK -> NxKxHxW
     heatmaps = torch.nn.functional.interpolate(
-        heatmaps,
-        size=np.squeeze(datasample).shape,
-        mode='bilinear',
-        align_corners=False)
-    heatmaps /= heatmaps.max(dim=3, keepdim=True)[0].max(
-        dim=2, keepdim=True)[0]  # normalize by factor (i.e., 1 of K)
+        heatmaps, size=np.squeeze(datasample).shape, mode="bilinear", align_corners=False
+    )
+    heatmaps /= heatmaps.max(dim=3, keepdim=True)[0].max(dim=2, keepdim=True)[0]  # normalize by factor (i.e., 1 of K)
     heatmaps = heatmaps.cpu().numpy()
 
     return heatmaps
 
+
 def load_h5_data(file_path, dataset_name=None):
     """
     Load data from an HDF5 (.h5) file.
-    
+
     Args:
         file_path (str): Path to the .h5 file.
         dataset_name (str, optional): Name of the dataset to load. If None, loads the first dataset found.
-    
+
     Returns:
         dict: A dictionary containing dataset names as keys and corresponding numpy arrays as values.
         If dataset_name is provided, returns only the specified dataset as a numpy array.
@@ -453,12 +462,13 @@ def load_h5_data(file_path, dataset_name=None):
 
 
 def preprocess_dataset(file_path):
-    with h5py.File(file_path, 'r') as h5_file:
+    with h5py.File(file_path, "r") as h5_file:
         # Assume the first key corresponds to the dataset
         key = list(h5_file.keys())[0]
         data = h5_file[key][:]
         return data
-    
+
+
 def integrated_grad(model, input_tensor, baseline=None, steps=50):
     """
     Compute Integrated Gradients for the given model and input.
@@ -482,10 +492,7 @@ def integrated_grad(model, input_tensor, baseline=None, steps=50):
         baseline = torch.zeros_like(input_tensor)
 
     # Generate scaled inputs
-    scaled_inputs = [
-        baseline + (float(i) / steps) * (input_tensor - baseline)
-        for i in range(steps + 1)
-    ]
+    scaled_inputs = [baseline + (float(i) / steps) * (input_tensor - baseline) for i in range(steps + 1)]
 
     # Accumulate gradients
     total_gradients = torch.zeros_like(input_tensor, dtype=torch.float32)

@@ -28,7 +28,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 try:
     from utils import full_squeeze
-except (Exception, ):
+except (Exception,):
     raise
 
 
@@ -36,16 +36,13 @@ class ImageDataset_normalised(torch.utils.data.Dataset):
 
     def __init__(self, path, nominal_laser_params=[900, 215]):
         self.path = path
-        self.nominal_laser_params = np.array(nominal_laser_params).astype(
-            np.float32)
+        self.nominal_laser_params = np.array(nominal_laser_params).astype(np.float32)
 
     def __getitem__(self, idx):
         """Get image and target y values"""
         with h5py.File(self.path) as h5f:
-            x = (np.expand_dims(np.array(h5f["x"][idx]).astype(np.float32),
-                                axis=0))
-            y = (np.array(h5f["y"][idx], dtype=np.float32) /
-                 self.nominal_laser_params)
+            x = np.expand_dims(np.array(h5f["x"][idx]).astype(np.float32), axis=0)
+            y = np.array(h5f["y"][idx], dtype=np.float32) / self.nominal_laser_params
 
         image = np.array(x)
 
@@ -55,7 +52,7 @@ class ImageDataset_normalised(torch.utils.data.Dataset):
 
     def __len__(self):
         with h5py.File(self.path) as h5f:
-            return len(h5f['x'])
+            return len(h5f["x"])
 
 
 # @profile
@@ -76,7 +73,7 @@ def vision_shap(data, batch_size, model_py, model_input):
 
     ds = ImageDataset_normalised(data)
 
-    device = torch.device('cpu')
+    device = torch.device("cpu")
     shap_loader = DataLoader(ds, batch_size=batch_size, shuffle=True)
     background, _ = next(iter(shap_loader))
     background = background.to(device)
@@ -95,8 +92,7 @@ def vision_shap(data, batch_size, model_py, model_input):
         shap_numpy = np.array(shap_values).transpose(0, 2, 3, 1)
         shap_numpy = np.expand_dims(shap_numpy, axis=0)
 
-    test_numpy = np.array([np.array(img)
-                           for img in test_image]).transpose(0, 2, 3, 1)
+    test_numpy = np.array([np.array(img) for img in test_image]).transpose(0, 2, 3, 1)
 
     plots = []
     for value in shap_numpy:
@@ -248,7 +244,7 @@ def overall_score(data, background_size, model_py, check_samples=-1):
             - The mean effect of pixel modifications across all samples.
     """
     ds = ImageDataset_normalised(data)
-    device = torch.device('cpu')
+    device = torch.device("cpu")
 
     shap_loader = DataLoader(ds, batch_size=background_size, shuffle=True)
     background, _ = next(iter(shap_loader))
@@ -260,8 +256,7 @@ def overall_score(data, background_size, model_py, check_samples=-1):
         samples_list = range(ds.__len__())
         len_samples = ds.__len__()
     else:
-        samples_list = list(
-            random.sample(range(0, ds.__len__()), check_samples))
+        samples_list = list(random.sample(range(0, ds.__len__()), check_samples))
         len_samples = check_samples
 
     pixels_off = []
@@ -288,8 +283,7 @@ def overall_score(data, background_size, model_py, check_samples=-1):
         image_filtered[image_filtered != 0] = 1
 
         largest_component = connected_components(image_filtered)
-        image_filtered = zero_non_largest_components(image_filtered,
-                                                     largest_component)
+        image_filtered = zero_non_largest_components(image_filtered, largest_component)
         pixels_sample = []
         effect_sample = []
 
@@ -342,7 +336,7 @@ def shap_overview(data, batch_background, batch_test, model_py):
 
     ds = ImageDataset_normalised(data)
 
-    device = torch.device('cpu')
+    device = torch.device("cpu")
 
     shap_loader = DataLoader(ds, batch_size=batch_background, shuffle=True)
     background, _ = next(iter(shap_loader))
@@ -370,17 +364,16 @@ def shap_overview(data, batch_background, batch_test, model_py):
         for j, sample in enumerate(value):
             x, y = np.squeeze(sample).shape[0], np.squeeze(sample).shape[1]
             flatten_list_shap = list(chain.from_iterable(np.squeeze(sample)))
-            flatten_list_value = list(
-                chain.from_iterable(np.squeeze(test_batch[j])))
+            flatten_list_value = list(chain.from_iterable(np.squeeze(test_batch[j])))
             shap_lists.append(flatten_list_shap)
             value_lists.append(flatten_list_value)
 
-        df = pd.DataFrame({
-            "mean_abs_shap":
-            np.mean(np.abs(np.array(shap_lists)), axis=0),
-            "stdev_abs_shap":
-            np.std(np.abs(np.array(shap_lists)), axis=0)
-        })
+        df = pd.DataFrame(
+            {
+                "mean_abs_shap": np.mean(np.abs(np.array(shap_lists)), axis=0),
+                "stdev_abs_shap": np.std(np.abs(np.array(shap_lists)), axis=0),
+            }
+        )
         df_sorted = df.sort_values("stdev_abs_shap", ascending=False)[:10]
         shap_values = []
         pixel_values = []
@@ -388,20 +381,15 @@ def shap_overview(data, batch_background, batch_test, model_py):
         num_values = 10
         for k in range(num_values):
             pixel_num = df_sorted.index[k]
-            x_unflattened, y_unflattened = int(pixel_num / x), int(pixel_num %
-                                                                   y)
-            name = "Pixel (" + str(x_unflattened) + "," + str(
-                y_unflattened) + ")"
+            x_unflattened, y_unflattened = int(pixel_num / x), int(pixel_num % y)
+            name = "Pixel (" + str(x_unflattened) + "," + str(y_unflattened) + ")"
             shap_values.append(np.array(shap_lists)[:, pixel_num])
             pixel_values.append(np.array(value_lists)[:, pixel_num])
             feature_names.append(name)
         shap_values = np.array(shap_values).transpose(1, 0)
         pixel_values = np.array(pixel_values).transpose(1, 0)
 
-        shap.summary_plot(shap_values,
-                          pixel_values,
-                          feature_names=feature_names,
-                          show=False)
+        shap.summary_plot(shap_values, pixel_values, feature_names=feature_names, show=False)
 
         plots.append(plt.gcf())
         plt.close()
