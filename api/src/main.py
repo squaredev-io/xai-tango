@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import pickle
 from xai_banking.utils.data_processing import preprocess_data
-from xai_banking.utils.explainers import lime_explainer, shap_explainer
+from xai_banking.utils.explainers import lime_explainer, shap_explainer, KerasModelWrapper
 import shap
 import matplotlib.pyplot as plt
 import matplotlib
@@ -17,10 +17,16 @@ from api.src.core.schemas.schemas import *
 from api.src.core.services.security import get_api_key
 from xaivision.utils import *
 from xaivision.xai_tools import *
+from tensorflow.keras.models import load_model
+import io
+import numpy as np
+import tensorflow as tf
+import json
 
 load_dotenv()
 # Agg backend for non-GUI rendering
 matplotlib.use("Agg")
+
 app = FastAPI(
     title="XAI API",
     description="An API for generating explanations and insights using XAI tools for Banking and Vision models in Tango Project.",
@@ -55,12 +61,13 @@ banking_model = None
 processed_data = None
 model = None
 dataset = None
+is_keras_model = False
 X_train, X_test, y_train, y_test = None, None, None, None
 
 
 @app.on_event("startup")
 def load_resources():
-    global banking_model, processed_data, X_train, X_test, y_train, y_test, model, dataset
+    global banking_model, processed_data, X_train, X_test, y_train, y_test, model, dataset, is_keras_model
     if not os.path.exists(BANKING_MODEL_PATH) or not os.path.exists(BANKING_DATA_PATH):
         raise RuntimeError("Banking Model or dataset not found.")
 
@@ -68,16 +75,34 @@ def load_resources():
         raise RuntimeError("Vision Model or dataset not found.")
 
     with open(BANKING_MODEL_PATH, "rb") as f:
-        banking_model = pickle.load(f)
+        # banking_model = pickle.load(f)
+        banking_model = None
+        if BANKING_MODEL_PATH.endswith(".pkl"):
+            pkl_model = pickle.load(f)
+            if isinstance(pkl_model, dict):
+                is_keras_model = True
+                raw_config = json.loads(pkl_model["config"])
+                model = tf.keras.utils.deserialize_keras_object(raw_config)
+                model.set_weights(pkl_model["weights"])
+                model.compile(
+                    optimizer="adam",
+                    loss="binary_crossentropy",
+                    metrics=["accuracy", tf.keras.metrics.Precision(), tf.keras.metrics.Recall()],
+                )
+                banking_model = model
+        elif BANKING_MODEL_PATH.endswith(".keras"):
+            model_bytes = BytesIO(f.read())
+            banking_model = load_model(model_bytes)
+            is_keras_model = True
 
     model = load_models(VISION_MODEL_PATH)
     dataset = preprocess_dataset(VISION_DATA_PATH)
 
     raw_data = pd.read_csv(BANKING_DATA_PATH)
-    processed_data = preprocess_data(raw_data)
+    processed_data = raw_data  # preprocess_data(raw_data)
 
-    X = processed_data.drop(columns=["label_fraud_post"])
-    y = processed_data["label_fraud_post"]
+    X = processed_data.iloc[:, :-1]  # drop(columns=["label_fraud_post"])
+    y = processed_data.iloc[:, -1]  # processed_data["label_fraud_post"]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
 
@@ -130,8 +155,10 @@ def lime_explanation(request: LimeRequest):
     Returns:
         LimeResponse: Base64 encoded plot URL for the LIME explanation.
     """
+    model_for_lime = KerasModelWrapper(banking_model) if is_keras_model else banking_model
+
     explanation = lime_explainer(
-        model=banking_model,
+        model=model_for_lime,
         X_train=X_train,
         X_test=X_test,
         selected_row_index=request.row_index,
@@ -168,7 +195,7 @@ def shap_explanation(request: ShapRequest):
     Returns:
         ShapResponse: Base64 encoded plot URL and additional metadata.
     """
-    shap_values = shap_explainer(banking_model, X_test)
+    shap_values = shap_explainer(banking_model, X_test, keras_model=is_keras_model)
 
     # Save plots based on the requested type
     buf = BytesIO()
