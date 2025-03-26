@@ -22,6 +22,7 @@ import io
 import numpy as np
 import tensorflow as tf
 import json
+import tempfile
 
 load_dotenv()
 # Agg backend for non-GUI rendering
@@ -91,8 +92,11 @@ def load_resources():
                 )
                 banking_model = model
         elif BANKING_MODEL_PATH.endswith(".keras"):
-            model_bytes = BytesIO(f.read())
-            banking_model = load_model(model_bytes)
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".keras") as tmp:
+                tmp.write(f.read())
+                tmp_path = tmp.name
+
+            banking_model = load_model(tmp_path)
             is_keras_model = True
 
     model = load_models(VISION_MODEL_PATH)

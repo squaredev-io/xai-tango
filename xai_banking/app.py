@@ -12,6 +12,7 @@ import io
 import numpy as np
 import tensorflow as tf
 import json
+import tempfile
 
 
 # Default file paths
@@ -84,8 +85,12 @@ if model_path:
         st.session_state["model_uploaded"] = True
         st.sidebar.success("Pickle model loaded successfully!")
     elif file_name.endswith(".keras"):
-        model_bytes = io.BytesIO(model_path.read())
-        st.session_state["model"] = load_model(model_bytes)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".keras") as tmp:
+            tmp.write(model_path.read())
+            tmp_path = tmp.name
+
+        model = load_model(tmp_path)
+        st.session_state["model"] = model
         st.session_state["model_uploaded"] = True
         st.session_state["is_keras_model"] = True
         st.sidebar.success("Keras model loaded successfully!")
