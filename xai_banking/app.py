@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import shap
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import load_model
-import io
+import os
 import numpy as np
 import tensorflow as tf
 import json
@@ -90,6 +90,7 @@ if model_path:
             tmp_path = tmp.name
 
         model = load_model(tmp_path)
+        os.remove(tmp_path)
         st.session_state["model"] = model
         st.session_state["model_uploaded"] = True
         st.session_state["is_keras_model"] = True

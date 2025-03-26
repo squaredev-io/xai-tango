@@ -97,6 +97,7 @@ def load_resources():
                 tmp_path = tmp.name
 
             banking_model = load_model(tmp_path)
+            os.remove(tmp_path)
             is_keras_model = True
 
     model = load_models(VISION_MODEL_PATH)
